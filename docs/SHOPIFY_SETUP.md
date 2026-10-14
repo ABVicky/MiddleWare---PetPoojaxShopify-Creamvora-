@@ -10,7 +10,7 @@ Your middleware exposes an HMAC-verified, serverless-optimized webhook receiver:
 ```
 https://<YOUR-VERCEL-DOMAIN>/api/webhooks/shopify
 ```
-Example: `https://petpooja-middleware.vercel.app/api/webhooks/shopify`
+Example: `https://petpooja-middleware1.vercel.app/api/webhooks/shopify`
 
 ---
 

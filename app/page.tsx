@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export default function DirectSyncStatusPage() {
-  const [baseUrl, setBaseUrl] = useState("https://petpooja-middleware.vercel.app");
+  const [baseUrl, setBaseUrl] = useState("https://petpooja-middleware1.vercel.app");
   const [copied, setCopied] = useState(false);
   const [testStatus, setTestStatus] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
