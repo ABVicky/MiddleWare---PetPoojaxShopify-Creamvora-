@@ -8,28 +8,37 @@ export interface PetpoojaMapperOptions {
   appSecret: string;
   accessToken: string;
   restId: string;
-  callbackUrl: string;
+  callbackUrl?: string;
   defaultOrderType?: string; // "Delivery" | "PickUp" | "DineIn"
 }
 
 export class PetpoojaOrderMapper {
   /**
-   * Transforms a Shopify order with resolved item mappings into the exact Petpooja V2.1.0 save_order payload.
+   * Transforms a Shopify order directly into the exact Petpooja V2.1.0 save_order payload.
+   * If custom database mappings are provided, they are used; otherwise, it auto-maps directly using SKU/Title/VariantID.
    */
   static toPetpoojaPayload(
     order: ShopifyOrderWebhook,
-    mappings: ResolvedMappingResult,
-    options: PetpoojaMapperOptions
+    mappings?: ResolvedMappingResult | null,
+    options?: PetpoojaMapperOptions
   ): PetpoojaSaveOrderPayload {
     const billing = BillingCalculator.calculateBilling(order);
 
-    // Format customer
+    const appKey = options?.appKey || process.env.PETPOOJA_APP_KEY || "rps3igv8ucfhydx01ao6k9ebnz75tqw4";
+    const appSecret = options?.appSecret || process.env.PETPOOJA_APP_SECRET || "71b70724b84d8d8ea06fe9cc0da105b07c412228";
+    const accessToken = options?.accessToken || process.env.PETPOOJA_ACCESS_TOKEN || "7337c1365cf2e61fe5f2b9f8d445db00dc6c39a1";
+    const restId = options?.restId || process.env.PETPOOJA_REST_ID || "SAMPLE_REST_101";
+    const defaultOrderType = options?.defaultOrderType || process.env.DEFAULT_ORDER_TYPE || "Delivery";
+    const appUrl = process.env.APP_URL || "https://petpooja-middleware.vercel.app";
+    const callbackUrl = options?.callbackUrl || `${appUrl.replace(/\/$/, "")}/api/petpooja/order-callback`;
+
+    // Customer formatting
     const customerName = [
       order.customer?.first_name || order.shipping_address?.first_name || "",
       order.customer?.last_name || order.shipping_address?.last_name || "",
     ]
       .join(" ")
-      .trim() || order.shipping_address?.name || "Online Customer";
+      .trim() || order.shipping_address?.name || "Shopify Customer";
 
     const customerAddress = [
       order.shipping_address?.address1,
@@ -42,16 +51,24 @@ export class PetpoojaOrderMapper {
       .filter(Boolean)
       .join(", ") || "Store Pickup / Not Provided";
 
-    // Format order items
-    const orderItems: PetpoojaOrderItem[] = mappings.mappedItems.map((mapped) => {
-      const line = mapped.lineItem;
-      const unitPrice = parseFloat(line.price).toFixed(2);
+    // Direct Line Items Mapping
+    const orderItems: PetpoojaOrderItem[] = order.line_items.map((line) => {
+      // Check if custom mapping exists in mappings object
+      const customMapped = mappings?.mappedItems?.find(
+        (m) => String(m.lineItem.id) === String(line.id)
+      );
+
+      const unitPrice = parseFloat(line.price || "0").toFixed(2);
       const discount = parseFloat(line.total_discount || "0").toFixed(2);
       const finalPrice = Math.max(0, parseFloat(unitPrice) - parseFloat(discount)).toFixed(2);
 
+      // Auto-fallback identifier: uses Petpooja item ID if mapped, else SKU, else Variant ID
+      const itemId = customMapped?.petpoojaItemId || line.sku || String(line.variant_id || line.id);
+      const itemName = customMapped?.petpoojaItemName || line.title;
+
       const item: PetpoojaOrderItem = {
-        id: mapped.petpoojaItemId,
-        name: mapped.petpoojaItemName || line.title,
+        id: itemId,
+        name: itemName,
         price: unitPrice,
         final_price: finalPrice,
         quantity: String(line.quantity),
@@ -60,23 +77,23 @@ export class PetpoojaOrderMapper {
         item_discount: discount,
       };
 
-      if (mapped.petpoojaVariationId) {
-        item.variation_id = mapped.petpoojaVariationId;
+      if (customMapped?.petpoojaVariationId) {
+        item.variation_id = customMapped.petpoojaVariationId;
       }
 
       return item;
     });
 
-    // Format tax lines
+    // Tax Lines
     const taxLines: Array<{ id?: string; name: string; amount: string }> = [];
-    if (parseFloat(order.total_tax) > 0) {
+    if (parseFloat(order.total_tax || "0") > 0) {
       taxLines.push({
         name: "GST / Taxes",
         amount: parseFloat(order.total_tax).toFixed(2),
       });
     }
 
-    // Format discount lines
+    // Discount Lines
     const discountLines: Array<{ code?: string; title: string; amount: string }> = [];
     if (billing.totalDiscounts.greaterThan(0)) {
       discountLines.push({
@@ -85,22 +102,21 @@ export class PetpoojaOrderMapper {
       });
     }
 
-    // Format created_on date to YYYY-MM-DD HH:MM:SS
-    const d = new Date(order.created_at);
+    // Date formatting (YYYY-MM-DD HH:MM:SS)
+    const d = new Date(order.created_at || Date.now());
     const createdOn = d.toISOString().replace("T", " ").substring(0, 19);
 
-    const packingCharges = "0.00";
     const deliveryCharges = billing.totalShipping.toFixed(2);
 
     return {
-      app_key: options.appKey,
-      app_secret: options.appSecret,
-      access_token: options.accessToken,
+      app_key: appKey,
+      app_secret: appSecret,
+      access_token: accessToken,
       orderinfo: {
         OrderInfo: {
           Restaurant: {
             details: {
-              restID: options.restId,
+              restID: restId,
             },
           },
           Customer: {
@@ -121,11 +137,11 @@ export class PetpoojaOrderMapper {
               discount_total: billing.totalDiscounts.toFixed(2),
               tax_total: billing.totalTax.toFixed(2),
               delivery_charges: deliveryCharges,
-              packing_charges: packingCharges,
-              order_type: options.defaultOrderType || "Delivery",
-              callback_url: options.callbackUrl,
+              packing_charges: "0.00",
+              order_type: defaultOrderType,
+              callback_url: callbackUrl,
               created_on: createdOn,
-              description: order.note || `Shopify Order #${order.order_number}`,
+              description: order.note || `Shopify Order #${order.order_number || order.name}`,
             },
           },
           OrderItem: {
