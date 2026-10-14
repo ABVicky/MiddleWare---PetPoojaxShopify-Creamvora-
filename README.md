@@ -1,76 +1,50 @@
-# Shopify ↔ Petpooja POS Integration Middleware
+# Shopify ➔ Petpooja Direct POS Sync
 
-A production-grade, serverless middleware connecting a **Shopify Store** to **Petpooja Restaurant POS**. Built for deployment on **Vercel** with **PostgreSQL** (Neon / Supabase) and **GitHub**.
+A stateless, real-time middleware connecting your **Shopify Store** directly to **Petpooja Restaurant POS**, hosted exclusively on **Vercel** and maintained in **GitHub**.
 
----
-
-## 🚀 Key Features
-
-- **Shopify Webhook Ingestion**: Receives `orders/create`, `orders/updated`, and `orders/cancelled` with cryptographic `X-Shopify-Hmac-Sha256` verification and deduplication. No custom Shopify app installation required.
-- **Official Petpooja V2.1.0 Support**: Implements the official [Petpooja Online Ordering API](https://onlineorderingapisv210.docs.apiary.io/) (`/save_order` on AWS API Gateway).
-- **Zero Silent Substitution**: Detects unmapped items and safely transitions orders to `NEEDS_MAPPING` with actionable resolution tools.
-- **Financial & Decimal Integrity**: Employs `decimal.js` for tax, discount, shipping, and COD vs Prepaid payment classification. Mismatched sums are flagged as `NEEDS_REVIEW`.
-- **Bidirectional Petpooja Callbacks**: Handles POS order status callbacks (`order-callback`), menu push (`menu-push`), store availability (`get-status`, `update-status`), and stock toggles (`item-on`, `item-off`).
-- **Durable Serverless Architecture**: Transactional outbox with Vercel Cron recovery (`/api/cron/process-queue` and `/api/cron/reconcile`) and exponential backoff retry.
-- **Modern Management Dashboard**: Next.js App Router with Tailwind CSS, KPI cards, order inspector, product mapping manager with CSV import/export, and live test simulator.
+**Only 4 tools/technologies used:**
+1. **Shopify**: Store & HTTP Order Webhook
+2. **Petpooja**: Online Ordering API (V2.1.0)
+3. **GitHub**: Repository hosting the code
+4. **Vercel**: Serverless execution (zero databases or external queues required)
 
 ---
 
-## 🛠️ Tech Stack
+## ⚡ How It Works
 
-- **Framework**: Next.js 14 (App Router) + TypeScript
-- **Styling**: Tailwind CSS + Lucide Icons
-- **Database**: PostgreSQL with Prisma ORM
-- **Durability**: Transactional Outbox + Vercel Cron Workers
-- **Financial Math**: Decimal.js
-- **Testing**: Vitest (Unit & Integration tests)
-- **Deployment**: Vercel + GitHub + Docker
+1. Customer places an order on Shopify.
+2. Shopify immediately sends a webhook to `https://<YOUR-VERCEL-DOMAIN>/api/webhooks/shopify`.
+3. The middleware verifies the HMAC signature, formats items, customer delivery details, payment type (Prepaid vs COD), and taxes.
+4. The middleware calls Petpooja's `/save_order` API directly.
+5. The order appears on your Petpooja POS screen / Kitchen Display (KDS) within seconds!
 
 ---
 
-## 📋 Quick Start
+## 🚀 Setup Guide
 
-### 1. Install Dependencies
-```bash
-npm install
-```
+### 1. Deploy to Vercel
+1. Go to [Vercel](https://vercel.com) and import `ABVicky/MiddleWare---PetPoojaxShopify-Creamvora-`.
+2. In **Environment Variables**, add:
+   - `PETPOOJA_ENV`: `staging` *(or `production`)*
+   - `PETPOOJA_APP_KEY`: `rps3igv8ucfhydx01ao6k9ebnz75tqw4`
+   - `PETPOOJA_APP_SECRET`: `71b70724b84d8d8ea06fe9cc0da105b07c412228`
+   - `PETPOOJA_ACCESS_TOKEN`: `7337c1365cf2e61fe5f2b9f8d445db00dc6c39a1`
+   - `PETPOOJA_REST_ID`: Your Restaurant Outlet ID in Petpooja (e.g. `SAMPLE_REST_101`)
+   - `SHOPIFY_WEBHOOK_SECRET`: *(Optional for HMAC check)*
+3. Click **Deploy**.
 
-### 2. Configure Environment
-Copy `.env.example` to `.env`:
-```bash
-cp .env.example .env
-```
-Update with your PostgreSQL database URL, Shopify Webhook Secret, and Petpooja credentials.
+### 2. Configure Shopify Webhook
+In your **Shopify Admin** ➔ **Settings** ➔ **Notifications** ➔ **Webhooks**:
+- Event: `Order creation`
+- Format: `JSON`
+- URL: `https://<YOUR-VERCEL-DOMAIN>/api/webhooks/shopify`
 
-### 3. Initialize Database
-```bash
-npx prisma generate
-npx prisma db push
-```
-
-### 4. Run Development Server
-```bash
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### 5. Run Automated Tests
-```bash
-npm test
-```
-
----
-
-## 📖 Documentation Index
-
-- [Implementation Plan](docs/IMPLEMENTATION_PLAN.md)
-- [Petpooja POS Setup](docs/PETPOOJA_SETUP.md)
-- [Shopify Webhooks Setup](docs/SHOPIFY_SETUP.md)
-- [GitHub & Vercel Deployment](docs/GITHUB_VERCEL_SETUP.md)
-- [Architecture & State Machine](docs/ARCHITECTURE.md)
-- [Financial Integrity & Taxes](docs/BILLING_AND_PAYMENTS.md)
-- [Product Mapping Guide](docs/PRODUCT_MAPPING.md)
-- [API Reference](docs/API_REFERENCE.md)
-- [Security & Redaction](docs/SECURITY.md)
-- [Testing Guide](docs/TESTING.md)
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
+### 3. Configure Petpooja Developer Portal
+In `developerapi.petpooja.com/developers/configuration/`:
+- **Base URL**: `https://<YOUR-VERCEL-DOMAIN>`
+- **Menu Sharing Endpoint**: `/api/petpooja/menu-push`
+- **Get Store Status API**: `/api/petpooja/get-status`
+- **Update Store Status API**: `/api/petpooja/update-status`
+- **Item Off API**: `/api/petpooja/item-off`
+- **Item On API**: `/api/petpooja/item-on`
+- Enable **Order Relay** ✅

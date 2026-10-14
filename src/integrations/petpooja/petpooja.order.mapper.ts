@@ -1,5 +1,4 @@
 import { ShopifyOrderWebhook } from "@/src/integrations/shopify/shopify.types";
-import { ResolvedMappingResult } from "@/src/services/mapping-service";
 import { BillingCalculator } from "@/src/services/billing-calculator";
 import { PetpoojaSaveOrderPayload, PetpoojaOrderItem } from "./petpooja.types";
 
@@ -15,11 +14,11 @@ export interface PetpoojaMapperOptions {
 export class PetpoojaOrderMapper {
   /**
    * Transforms a Shopify order directly into the exact Petpooja V2.1.0 save_order payload.
-   * If custom database mappings are provided, they are used; otherwise, it auto-maps directly using SKU/Title/VariantID.
+   * Auto-maps directly using SKU/Title/VariantID with zero external database dependencies.
    */
   static toPetpoojaPayload(
     order: ShopifyOrderWebhook,
-    mappings?: ResolvedMappingResult | null,
+    mappings?: unknown,
     options?: PetpoojaMapperOptions
   ): PetpoojaSaveOrderPayload {
     const billing = BillingCalculator.calculateBilling(order);
@@ -51,20 +50,15 @@ export class PetpoojaOrderMapper {
       .filter(Boolean)
       .join(", ") || "Store Pickup / Not Provided";
 
-    // Direct Line Items Mapping
+    // Direct Line Items Auto-Mapping
     const orderItems: PetpoojaOrderItem[] = order.line_items.map((line) => {
-      // Check if custom mapping exists in mappings object
-      const customMapped = mappings?.mappedItems?.find(
-        (m) => String(m.lineItem.id) === String(line.id)
-      );
-
       const unitPrice = parseFloat(line.price || "0").toFixed(2);
       const discount = parseFloat(line.total_discount || "0").toFixed(2);
       const finalPrice = Math.max(0, parseFloat(unitPrice) - parseFloat(discount)).toFixed(2);
 
-      // Auto-fallback identifier: uses Petpooja item ID if mapped, else SKU, else Variant ID
-      const itemId = customMapped?.petpoojaItemId || line.sku || String(line.variant_id || line.id);
-      const itemName = customMapped?.petpoojaItemName || line.title;
+      // Identifier: Uses SKU if available, otherwise Variant ID, otherwise Line Item ID
+      const itemId = line.sku || String(line.variant_id || line.id);
+      const itemName = line.title;
 
       const item: PetpoojaOrderItem = {
         id: itemId,
@@ -76,10 +70,6 @@ export class PetpoojaOrderMapper {
         gst_liability: "merchant",
         item_discount: discount,
       };
-
-      if (customMapped?.petpoojaVariationId) {
-        item.variation_id = customMapped.petpoojaVariationId;
-      }
 
       return item;
     });

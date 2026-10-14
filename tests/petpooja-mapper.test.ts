@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { PetpoojaOrderMapper } from "@/src/integrations/petpooja/petpooja.order.mapper";
 import { ShopifyOrderWebhook } from "@/src/integrations/shopify/shopify.types";
-import { ResolvedMappingResult } from "@/src/services/mapping-service";
 
 describe("Petpooja Order Mapper (V2.1.0)", () => {
   const shopifyOrder: ShopifyOrderWebhook = {
@@ -38,6 +37,7 @@ describe("Petpooja Order Mapper (V2.1.0)", () => {
         id: 991,
         title: "Margherita Pizza (10 inch)",
         variant_title: "Regular",
+        sku: "ITEM_PIZZA_MARGHERITA",
         quantity: 1,
         price: "299.00",
         total_discount: "0.00",
@@ -46,21 +46,8 @@ describe("Petpooja Order Mapper (V2.1.0)", () => {
     test: false,
   };
 
-  const mappingResult: ResolvedMappingResult = {
-    isFullyMapped: true,
-    mappedItems: [
-      {
-        lineItem: shopifyOrder.line_items[0],
-        petpoojaItemId: "ITEM_PIZZA_MARGHERITA",
-        petpoojaVariationId: "VAR_REG_CRUST",
-        petpoojaItemName: "Margherita Pizza (10 inch)",
-      },
-    ],
-    unmappedItems: [],
-  };
-
-  it("should transform Shopify order into exact Petpooja V2.1.0 structure", () => {
-    const payload = PetpoojaOrderMapper.toPetpoojaPayload(shopifyOrder, mappingResult, {
+  it("should transform Shopify order directly into exact Petpooja V2.1.0 structure", () => {
+    const payload = PetpoojaOrderMapper.toPetpoojaPayload(shopifyOrder, null, {
       appKey: "test_key",
       appSecret: "test_secret",
       accessToken: "test_token",
@@ -86,7 +73,6 @@ describe("Petpooja Order Mapper (V2.1.0)", () => {
 
     expect(orderInfo.OrderItem.details).toHaveLength(1);
     expect(orderInfo.OrderItem.details[0].id).toBe("ITEM_PIZZA_MARGHERITA");
-    expect(orderInfo.OrderItem.details[0].variation_id).toBe("VAR_REG_CRUST");
     expect(orderInfo.OrderItem.details[0].quantity).toBe("1");
   });
 });

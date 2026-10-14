@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/src/db/client";
 import { logger } from "@/src/lib/logger";
 import { verifyShopifyWebhook } from "@/src/integrations/shopify/webhook-verifier";
 import { ShopifyOrderWebhookSchema, ShopifyOrderWebhook } from "@/src/integrations/shopify/shopify.types";
@@ -14,7 +13,7 @@ export async function POST(req: NextRequest) {
   const shopDomain = req.headers.get("x-shopify-shop-domain");
   const hmacHeader = req.headers.get("x-shopify-hmac-sha256");
 
-  // Read raw request buffer for HMAC
+  // Read raw request buffer for HMAC verification
   const rawArrayBuffer = await req.arrayBuffer();
   const rawBuffer = Buffer.from(rawArrayBuffer);
   const rawBodyText = rawBuffer.toString("utf8");
@@ -25,7 +24,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required headers" }, { status: 400 });
   }
 
-  // 2. Signature verification (if secret is configured)
+  // 2. Cryptographic HMAC Verification (if secret is configured in Vercel environment)
   const webhookSecret = process.env.SHOPIFY_WEBHOOK_SECRET || process.env.SHOPIFY_CLIENT_SECRET;
   if (webhookSecret && hmacHeader) {
     const verification = verifyShopifyWebhook(rawBuffer, hmacHeader, webhookSecret);
@@ -39,7 +38,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 3. Parse JSON
+  // 3. Parse JSON Payload
   let parsedJson: unknown;
   try {
     parsedJson = JSON.parse(rawBodyText);
@@ -58,7 +57,10 @@ export async function POST(req: NextRequest) {
     const parseResult = ShopifyOrderWebhookSchema.safeParse(parsedJson);
     if (!parseResult.success) {
       logger.error("Shopify Order Schema validation failed", parseResult.error, { deliveryId });
-      return NextResponse.json({ error: "Payload schema mismatch", details: parseResult.error }, { status: 422 });
+      return NextResponse.json(
+        { error: "Payload schema mismatch", details: parseResult.error },
+        { status: 422 }
+      );
     }
 
     const order: ShopifyOrderWebhook = parseResult.data;
@@ -70,7 +72,7 @@ export async function POST(req: NextRequest) {
       total: order.total_price,
     });
 
-    // Petpooja Client Initialization
+    // Petpooja API Credentials from Vercel Environment Variables
     const appKey = process.env.PETPOOJA_APP_KEY || "rps3igv8ucfhydx01ao6k9ebnz75tqw4";
     const appSecret = process.env.PETPOOJA_APP_SECRET || "71b70724b84d8d8ea06fe9cc0da105b07c412228";
     const accessToken = process.env.PETPOOJA_ACCESS_TOKEN || "7337c1365cf2e61fe5f2b9f8d445db00dc6c39a1";
@@ -93,7 +95,7 @@ export async function POST(req: NextRequest) {
       restId,
     });
 
-    // DIRECT CALL TO PETPOOJA POS
+    // DIRECT RELAY: Call Petpooja save_order API immediately
     try {
       const petpoojaResponse = await petpoojaClient.saveOrder(petpoojaPayload);
 
@@ -102,31 +104,6 @@ export async function POST(req: NextRequest) {
         petpoojaOrderId: petpoojaResponse.orderID,
         restID: petpoojaResponse.restID,
       });
-
-      // Optional DB persistence for logging (never blocks if DB is offline)
-      try {
-        await db.shopifyOrder.upsert({
-          where: { shopifyOrderId: String(order.id) },
-          create: {
-            shopifyOrderId: String(order.id),
-            orderNumber: String(order.order_number),
-            shopDomain: shopDomain || "shopify",
-            currency: order.currency || "INR",
-            financialStatus: order.financial_status,
-            subtotalPrice: order.subtotal_price,
-            totalPrice: order.total_price,
-            customerName: `${order.customer?.first_name || ""} ${order.customer?.last_name || ""}`.trim(),
-            shopifyCreatedAt: new Date(order.created_at),
-            syncStatus: "SYNCED",
-            rawJson: rawBodyText,
-          },
-          update: {
-            syncStatus: "SYNCED",
-          },
-        });
-      } catch {
-        // Database is optional; do not fail sync if database is unconfigured
-      }
 
       return NextResponse.json(
         {
