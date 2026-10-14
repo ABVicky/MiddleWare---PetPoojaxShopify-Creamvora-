@@ -1,0 +1,37 @@
+{
+  "name": "shopify-petpooja-middleware",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-grade Shopify to Petpooja POS integration middleware designed for Vercel and PostgreSQL",
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "node scripts/seed.mjs"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.20.0",
+    "decimal.js": "^10.4.3",
+    "lucide-react": "^0.451.0",
+    "next": "^14.2.24",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.11",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "prisma": "^5.20.0",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.2"
+  }
+}
