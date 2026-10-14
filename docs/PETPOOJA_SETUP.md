@@ -41,7 +41,7 @@ Navigate to `https://developerapi.petpooja.com/developers/configuration/` and co
 
 | Field in Petpooja Portal | Value | Description |
 | :--- | :--- | :--- |
-| **Base URL** | `https://your-app.vercel.app` | Your Vercel deployment domain |
+| **Base URL** | `https://petpooja-middleware1.vercel.app` | Your live Vercel deployment domain |
 | **Type** | `[x] Menu Push` | Petpooja pushes catalog changes automatically |
 | **Menu Sharing Endpoint** | `/api/petpooja/menu-push` | Receives menu catalog updates |
 | **Get Store Status API Endpoint** | `/api/petpooja/get-status` | Petpooja polls current store online state |

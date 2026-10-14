@@ -1,70 +1,44 @@
 # GitHub and Vercel Deployment Guide
 
-This guide walks you through deploying the Shopify ↔ Petpooja POS Middleware to **Vercel** with **Neon / Supabase PostgreSQL** and **GitHub CI/CD**.
+This guide walks you through deploying the direct Shopify ➔ Petpooja POS integration to **Vercel** via **GitHub**.
 
 ---
 
-## 1. Create the GitHub Repository
+## 1. Repository Details
 
-1. Initialize git locally (if not already initialized):
-   ```bash
-   git init
-   git add .
-   git commit -m "feat: complete shopify petpooja pos middleware"
-   ```
-2. Create a new repository on [GitHub](https://github.com/new) (e.g. `shopify-petpooja-middleware`).
-3. Link and push your code:
-   ```bash
-   git remote add origin https://github.com/<YOUR-USERNAME>/shopify-petpooja-middleware.git
-   git branch -M main
-   git push -u origin main
-   ```
+- **GitHub Repository**: [https://github.com/ABVicky/MiddleWare---PetPoojaxShopify-Creamvora-.git](https://github.com/ABVicky/MiddleWare---PetPoojaxShopify-Creamvora-.git)
+- **Production URL**: `https://petpooja-middleware1.vercel.app`
 
 ---
 
-## 2. Provision a Serverless PostgreSQL Database
+## 2. Deploy to Vercel (Zero Database Required)
 
-Create a free serverless PostgreSQL instance on **Neon** (`https://neon.tech`) or **Supabase** (`https://supabase.com`):
-1. Create a new project in the region closest to your restaurant/store (e.g., Singapore `ap-southeast-1` or Mumbai `ap-south-1`).
-2. Copy the **Pooled Connection String** (`DATABASE_URL`) with `?sslmode=require&pgbouncer=true`.
-3. Copy the **Direct Connection String** (`DIRECT_URL`).
-
----
-
-## 3. Deploy to Vercel
-
-1. Log into [Vercel Dashboard](https://vercel.com).
+1. Log into your [Vercel Dashboard](https://vercel.com).
 2. Click **Add New...** → **Project**.
-3. Import the `shopify-petpooja-middleware` GitHub repository.
-4. Keep the Framework Preset as **Next.js**.
-5. In **Environment Variables**, add the following required keys:
+3. Import the repository: `ABVicky/MiddleWare---PetPoojaxShopify-Creamvora-`.
+4. Leave the Framework Preset as **Next.js**.
+5. Under **Environment Variables**, add:
 
-| Key | Example Value | Description |
+| Key | Example / Default Value | Description |
 | :--- | :--- | :--- |
-| `DATABASE_URL` | `postgresql://user:pass@ep-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require` | Pooled DB URL |
-| `DIRECT_URL` | `postgresql://user:pass@ep.ap-southeast-1.aws.neon.tech/neondb?sslmode=require` | Direct DB URL for migrations |
-| `APP_URL` | `https://your-app-name.vercel.app` | Production app domain |
-| `CRON_SECRET` | `<32-char-random-string>` | Protects Vercel cron endpoints |
-| `SHOPIFY_SHOP_DOMAIN` | `your-store.myshopify.com` | Shopify domain |
-| `SHOPIFY_WEBHOOK_SECRET`| `your_shopify_webhook_secret` | Shopify webhook signature key |
+| `APP_URL` | `https://petpooja-middleware1.vercel.app` | Production app domain |
 | `PETPOOJA_ENV` | `staging` (or `production`) | Petpooja environment |
 | `PETPOOJA_APP_KEY` | `rps3igv8ucfhydx01ao6k9ebnz75tqw4` | Petpooja App Key |
 | `PETPOOJA_APP_SECRET` | `71b70724b84d8d8ea06fe9cc0da105b07c412228` | Petpooja App Secret |
 | `PETPOOJA_ACCESS_TOKEN` | `7337c1365cf2e61fe5f2b9f8d445db00dc6c39a1` | Petpooja Access Token |
-| `PETPOOJA_REST_ID` | `SAMPLE_REST_101` | Mapped Restaurant ID |
+| `PETPOOJA_REST_ID` | `SAMPLE_REST_101` | Your Petpooja Restaurant Outlet ID |
+| `SHOPIFY_WEBHOOK_SECRET` | `your_webhook_signing_secret` | (Optional) HMAC secret from Shopify |
 
 6. Click **Deploy**.
-7. Run the initial database push once deployed:
-   ```bash
-   npx prisma db push
-   ```
 
 ---
 
-## 4. Vercel Cron Configuration
+## 3. Webhook Endpoints Active in Vercel
 
-The `vercel.json` included in the repository automatically registers:
-- `*/5 * * * *` → `/api/cron/process-queue` (recovers pending retries and outbox jobs)
-- `0 * * * *` → `/api/cron/reconcile` (hourly reconciliation audit)
-
-These endpoints verify `Authorization: Bearer <CRON_SECRET>` automatically supplied by Vercel Cron.
+Once deployed, your endpoints are immediately active:
+- **Shopify Webhook Target**: `https://petpooja-middleware1.vercel.app/api/webhooks/shopify`
+- **Petpooja Status Callback**: `https://petpooja-middleware1.vercel.app/api/petpooja/order-callback`
+- **Petpooja Menu Sharing**: `https://petpooja-middleware1.vercel.app/api/petpooja/menu-push`
+- **Petpooja Store Status Check**: `https://petpooja-middleware1.vercel.app/api/petpooja/get-status`
+- **Petpooja Store Status Update**: `https://petpooja-middleware1.vercel.app/api/petpooja/update-status`
+- **Petpooja Item Stock Toggles**: `https://petpooja-middleware1.vercel.app/api/petpooja/item-on` & `item-off`
