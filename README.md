@@ -6,7 +6,6 @@
 [![Vercel Hosted](https://img.shields.io/badge/Vercel-Serverless-black?style=for-the-badge&logo=vercel)](https://vercel.com/)
 [![Petpooja API](https://img.shields.io/badge/Petpooja-V2.1.0-orange?style=for-the-badge)](https://developerapi.petpooja.com/)
 [![Shopify](https://img.shields.io/badge/Shopify-Webhook-green?style=for-the-badge&logo=shopify)](https://shopify.dev/)
-[![Tests](https://img.shields.io/badge/Tests-12%20Passing-brightgreen?style=for-the-badge&logo=vitest)](https://vitest.dev/)
 
 A ultra-fast, stateless, serverless middleware connecting online orders placed on **Shopify** directly into physical **Petpooja Restaurant POS** screens and Kitchen Display Systems (KDS) within milliseconds.
 
@@ -149,14 +148,7 @@ curl -X POST https://petpooja-middleware1.vercel.app/api/petpooja/get-status \
 }
 ```
 
-### 2. Run Local Unit Tests
-All mapping, HMAC signature checking, redaction, and billing calculations are covered by automated unit tests:
-
-```bash
-npm test
-```
-
-### 3. Validate Production Next.js Build
+### 2. Validate Production Next.js Build
 ```bash
 npx next build
 ```
@@ -187,8 +179,7 @@ npx next build
 │   │   └── shopify/             # Shopify Webhook Signature Verifier & Types
 │   ├── lib/                     # Logger, redaction, and error handlers
 │   └── services/                # Precision billing & GST breakdown calculations
-├── docs/                        # Complete setup guides & Petpooja specs
-└── tests/                       # Vitest test suite (12/12 passing)
+└── docs/                        # Complete setup guides & Petpooja specs
 ```
 
 ---
