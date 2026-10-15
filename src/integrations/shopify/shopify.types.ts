@@ -94,6 +94,8 @@ export const ShopifyOrderWebhookSchema = z.object({
   subtotal_price: z.string(),
   total_tax: z.string().default("0.00"),
   total_discounts: z.string().default("0.00"),
+  taxes_included: z.boolean().optional().default(false),
+  tax_lines: z.array(ShopifyTaxLineSchema).optional().default([]),
   total_shipping_price_set: ShopifyPriceSetSchema.optional(),
   shipping_lines: z.array(ShopifyShippingLineSchema).optional().default([]),
   payment_gateway_names: z.array(z.string()).optional().default([]),

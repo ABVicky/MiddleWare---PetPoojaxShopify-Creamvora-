@@ -1,25 +1,28 @@
 export interface PetpoojaOrderItem {
   id: string;
   name: string;
-  price: string;
-  final_price: string;
-  quantity: string;
-  description?: string;
-  variation_id?: string;
-  variation_name?: string;
+  tax_inclusive?: boolean;
   gst_liability?: string;
   item_tax?: Array<{
     id?: string;
     name?: string;
-    percentage?: string;
+    tax_percentage?: string;
     amount?: string;
   }>;
   item_discount?: string;
+  price: string;
+  final_price: string;
+  quantity: string;
+  description?: string;
+  variation_name?: string;
+  variation_id?: string;
   AddonItem?: {
     details: Array<{
       id: string;
       name: string;
+      group_name?: string;
       price: string;
+      group_id?: number | string;
       quantity: string;
     }>;
   };
@@ -30,30 +33,40 @@ export interface PetpoojaOrderDetails {
   preorder_date?: string;
   preorder_time?: string;
   service_charge?: string;
+  sc_tax_amount?: string;
   delivery_charges?: string;
   dc_tax_percentage?: string;
   dc_tax_amount?: string;
+  dc_gst_details?: Array<{
+    gst_liable: string;
+    amount: string;
+  }>;
   packing_charges?: string;
-  pc_tax_percentage?: string;
   pc_tax_amount?: string;
-  order_type: string; // Delivery, PickUp, DineIn
+  pc_tax_percentage?: string;
+  pc_gst_details?: Array<{
+    gst_liable: string;
+    amount: string;
+  }>;
+  order_type: string; // H (Home Delivery), P (PickUp), D (DineIn)
   ondc_bap?: string;
   advanced_order?: string;
+  urgent_order?: boolean;
+  urgent_time?: number;
   payment_type: string; // COD, Prepaid, ONLINE
   table_no?: string;
   no_of_persons?: string;
   discount_total?: string;
   tax_total?: string;
+  discount_type?: string;
   total: string;
   description?: string;
   created_on: string; // YYYY-MM-DD HH:MM:SS
-  enable_delivery?: string;
-  min_prep_time?: string;
+  enable_delivery?: number | string;
+  min_prep_time?: number | string;
   callback_url: string;
   collect_cash?: string;
   otp?: string;
-  urgent_order?: boolean;
-  urgent_time?: number;
 }
 
 export interface PetpoojaCustomerDetails {
@@ -66,11 +79,22 @@ export interface PetpoojaCustomerDetails {
 }
 
 export interface PetpoojaRestaurantDetails {
-  restID: string;
-  res_name?: string;
-  name?: string;
+  res_name: string;
   address?: string;
   contact_information?: string;
+  restID: string;
+  name?: string;
+}
+
+export interface PetpoojaTaxItem {
+  id?: string;
+  title: string;
+  type?: string;
+  price?: string;
+  tax?: string;
+  amount?: string;
+  percentage?: string;
+  restaurant_liable_amt?: string;
 }
 
 export interface PetpoojaSaveOrderPayload {
@@ -92,14 +116,9 @@ export interface PetpoojaSaveOrderPayload {
         details: PetpoojaOrderItem[];
       };
       Tax: {
-        details: Array<{
-          id?: string;
-          name: string;
-          percentage?: string;
-          amount: string;
-        }>;
+        details: PetpoojaTaxItem[];
       };
-      Discount: {
+      Discount?: {
         details: Array<{
           id?: string;
           code?: string;
@@ -109,6 +128,8 @@ export interface PetpoojaSaveOrderPayload {
         }>;
       };
     };
+    udid?: string;
+    device_type?: string;
   };
   udid?: string;
   device_type?: string;
