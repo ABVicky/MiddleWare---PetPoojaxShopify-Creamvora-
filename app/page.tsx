@@ -5,8 +5,6 @@ import { useEffect, useState } from "react";
 export default function DirectSyncStatusPage() {
   const [baseUrl, setBaseUrl] = useState("https://petpooja-middleware1.vercel.app");
   const [copied, setCopied] = useState(false);
-  const [testStatus, setTestStatus] = useState<string | null>(null);
-  const [testing, setTesting] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -18,28 +16,6 @@ export default function DirectSyncStatusPage() {
     navigator.clipboard.writeText(`${baseUrl}/api/webhooks/shopify`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
-  };
-
-  const handleTestOrderSync = async () => {
-    setTesting(true);
-    setTestStatus("Sending direct test order to Petpooja POS...");
-    try {
-      const res = await fetch("/api/simulator", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "inject_webhook", scenario: "standard" }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        setTestStatus(`✅ Success! Test Order received and directly synced to Petpooja POS.`);
-      } else {
-        setTestStatus(`⚠️ Response: ${JSON.stringify(json.response || json)}`);
-      }
-    } catch (err) {
-      setTestStatus(`❌ Error: ${String(err)}`);
-    } finally {
-      setTesting(false);
-    }
   };
 
   return (
@@ -62,7 +38,7 @@ export default function DirectSyncStatusPage() {
           Shopify ➔ Petpooja Direct Order Relay
         </h1>
         <p className="text-sm text-slate-400 mt-2 leading-relaxed">
-          Orders placed on your Shopify store are instantly transformed and pushed directly to your Petpooja POS terminal. No manual mapping or dashboard actions required.
+          Orders placed on your Shopify store are instantly transformed and pushed directly to your Petpooja POS terminal.
         </p>
 
         {/* Copy Webhook Box */}
@@ -80,29 +56,9 @@ export default function DirectSyncStatusPage() {
             </button>
           </div>
           <p className="text-[11px] text-slate-500">
-            Paste this URL in Shopify Admin → <strong>Settings</strong> → <strong>Notifications</strong> → <strong>Webhooks</strong> for <code>Order creation</code>.
+            Configured in Shopify Admin → <strong>Settings</strong> → <strong>Notifications</strong> → <strong>Webhooks</strong> for <code>Order creation</code>.
           </p>
         </div>
-
-        {/* Instant Test Action */}
-        <div className="mt-6 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-xs text-slate-400">
-            Want to test if orders reach Petpooja immediately?
-          </div>
-          <button
-            disabled={testing}
-            onClick={handleTestOrderSync}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-lg shadow-indigo-600/30 disabled:opacity-50"
-          >
-            {testing ? "Sending to Petpooja..." : "⚡ Send Live Test Order to Petpooja"}
-          </button>
-        </div>
-
-        {testStatus && (
-          <div className="mt-4 p-3.5 rounded-xl bg-slate-900 border border-indigo-700/60 text-slate-200 text-xs font-medium animate-fadeIn">
-            {testStatus}
-          </div>
-        )}
       </div>
 
       {/* How it works */}
@@ -111,7 +67,7 @@ export default function DirectSyncStatusPage() {
           <div className="text-2xl">1️⃣</div>
           <div className="font-bold text-white text-sm">Customer Orders</div>
           <div className="text-slate-400 leading-relaxed">
-            Customer places an order on your Shopify store via Cash on Delivery, UPI, or Card.
+            Customer places an order on your Shopify store.
           </div>
         </div>
 

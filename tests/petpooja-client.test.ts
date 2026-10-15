@@ -1,18 +1,36 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PetpoojaClient } from "@/src/integrations/petpooja/petpooja.client";
 import { PetpoojaError } from "@/src/integrations/petpooja/petpooja.errors";
 
-describe("Petpooja API Client & Mock Adapter", () => {
+describe("Petpooja API Client", () => {
   const client = new PetpoojaClient({
     appKey: "test_key",
     appSecret: "test_secret",
     accessToken: "test_token",
     restId: "REST_101",
-    env: "mock",
+    env: "staging",
   });
 
-  it("should successfully process order push in mock mode", async () => {
-    const mockPayload = {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("should successfully process order push via API", async () => {
+    const mockResponse = {
+      success: "1",
+      message: "Order successfully saved in Petpooja POS",
+      restID: "REST_101",
+      clientOrderID: "ORDER_101",
+      orderID: "PETPOOJA_POS_987654",
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      status: 200,
+      ok: true,
+      text: () => Promise.resolve(JSON.stringify(mockResponse)),
+    } as unknown as Response);
+
+    const testPayload = {
       app_key: "test_key",
       app_secret: "test_secret",
       access_token: "test_token",
@@ -22,7 +40,7 @@ describe("Petpooja API Client & Mock Adapter", () => {
           Customer: { details: { name: "Test Customer" } },
           Order: {
             details: {
-              orderID: "MOCK_ORDER_101",
+              orderID: "ORDER_101",
               payment_type: "Prepaid",
               total: "299.00",
               callback_url: "https://localhost/api/petpooja/order-callback",
@@ -37,10 +55,10 @@ describe("Petpooja API Client & Mock Adapter", () => {
       },
     };
 
-    const res = await client.saveOrder(mockPayload);
+    const res = await client.saveOrder(testPayload);
     expect(res.success).toBe("1");
-    expect(res.clientOrderID).toBe("MOCK_ORDER_101");
-    expect(res.orderID).toContain("MOCK_POS_");
+    expect(res.clientOrderID).toBe("ORDER_101");
+    expect(res.orderID).toBe("PETPOOJA_POS_987654");
   });
 
   it("should classify API error responses accurately", () => {

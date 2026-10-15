@@ -16,7 +16,7 @@ export interface PetpoojaClientConfig {
   menuApiUrl?: string;
   storeApiUrl?: string;
   stockApiUrl?: string;
-  env?: "mock" | "staging" | "production";
+  env?: "staging" | "production";
 }
 
 export class PetpoojaClient {
@@ -28,14 +28,14 @@ export class PetpoojaClient {
   private menuApiUrl: string;
   private storeApiUrl: string;
   private stockApiUrl: string;
-  private env: "mock" | "staging" | "production";
+  private env: "staging" | "production";
 
   constructor(config: PetpoojaClientConfig) {
     this.appKey = config.appKey;
     this.appSecret = config.appSecret;
     this.accessToken = config.accessToken;
     this.restId = config.restId;
-    this.env = config.env || (process.env.PETPOOJA_ENV as "mock" | "staging" | "production") || "staging";
+    this.env = config.env || (process.env.PETPOOJA_ENV as "staging" | "production") || "staging";
     this.orderApiUrl =
       config.orderApiUrl ||
       process.env.PETPOOJA_ORDER_API_URL ||
@@ -55,23 +55,9 @@ export class PetpoojaClient {
   }
 
   /**
-   * Pushes a new online order into Petpooja POS.
+   * Pushes a live online order into Petpooja POS via the official AWS API Gateway endpoint.
    */
   async saveOrder(payload: PetpoojaSaveOrderPayload): Promise<PetpoojaSaveOrderResponse> {
-    const clientOrderId = payload.orderinfo.OrderInfo.Order.details.orderID;
-
-    // Handle Mock Mode
-    if (this.env === "mock") {
-      logger.info("[MOCK] Simulating Petpooja save_order request", { clientOrderId });
-      return {
-        success: "1",
-        message: "Order successfully saved in Petpooja POS (Mock Mode)",
-        restID: this.restId,
-        clientOrderID: clientOrderId,
-        orderID: `MOCK_POS_${Date.now()}`,
-      };
-    }
-
     try {
       const response = await fetch(this.orderApiUrl, {
         method: "POST",
@@ -104,7 +90,7 @@ export class PetpoojaClient {
 
       const result = validation.data as PetpoojaSaveOrderResponse;
 
-      // Petpooja returns HTTP 200 even for logical errors, with success: "0"
+      // Petpooja returns success: "0" when business logic fails
       if (result.success !== "1") {
         throw PetpoojaError.fromApiResponse(result, response.status);
       }
@@ -126,48 +112,6 @@ export class PetpoojaClient {
    */
   async fetchMenu(restId?: string): Promise<PetpoojaMenuResponse> {
     const targetRestId = restId || this.restId;
-
-    if (this.env === "mock") {
-      return {
-        success: "1",
-        message: "Menu fetched successfully (Mock Mode)",
-        restaurants: [
-          {
-            restaurantid: targetRestId,
-            active: "1",
-            menusharingcode: "MOCK_MENU_001",
-            currency_html: "&#8377;",
-            minimumorderamount: "100.00",
-          },
-        ],
-        items: [
-          {
-            itemid: "ITEM_PIZZA_MARGHERITA",
-            itemname: "Margherita Pizza (10 inch)",
-            itemcategoryid: "CAT_PIZZA",
-            price: "299.00",
-            in_stock: "1",
-            itemallowvariation: "0",
-          },
-          {
-            itemid: "ITEM_GARLIC_BREAD",
-            itemname: "Cheesy Garlic Bread",
-            itemcategoryid: "CAT_SIDES",
-            price: "149.00",
-            in_stock: "1",
-            itemallowvariation: "0",
-          },
-          {
-            itemid: "ITEM_COLD_COFFEE",
-            itemname: "Classic Cold Coffee",
-            itemcategoryid: "CAT_BEVERAGES",
-            price: "119.00",
-            in_stock: "1",
-            itemallowvariation: "0",
-          },
-        ],
-      };
-    }
 
     const response = await fetch(this.menuApiUrl, {
       method: "POST",
