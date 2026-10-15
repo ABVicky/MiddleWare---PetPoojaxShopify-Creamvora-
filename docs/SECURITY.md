@@ -18,9 +18,8 @@ The middleware includes a dedicated redaction engine (`src/lib/redact.ts`):
 
 ---
 
-## 3. Serverless Database Security
+## 3. Stateless Architecture & PCI-DSS Compliance
 
-- Database communication utilizes TLS (`sslmode=require`).
-- Uses parameterized queries via Prisma ORM to eliminate SQL injection vulnerabilities.
-- API endpoints for admin metrics and logs require valid session or API credentials.
-- Vercel Cron endpoints are protected by `CRON_SECRET` bearer tokens.
+- **Zero Persistence**: The middleware is completely stateless; no order data, customer credit cards, or personal information is stored on external disks or databases.
+- **Direct Memory Relay**: Orders pass directly from Shopify's encrypted webhook to Petpooja's HTTPS `/save_order` API in volatile memory and are immediately disposed of upon response.
+- **Transport Layer Security**: All communications with Shopify, Vercel, and Petpooja enforce modern TLS 1.3 encryption.
