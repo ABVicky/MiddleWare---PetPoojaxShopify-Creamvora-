@@ -29,7 +29,7 @@ A stateless, real-time middleware connecting your **Shopify Store** directly to 
    - `PETPOOJA_APP_KEY`: `rps3igv8ucfhydx01ao6k9ebnz75tqw4`
    - `PETPOOJA_APP_SECRET`: `71b70724b84d8d8ea06fe9cc0da105b07c412228`
    - `PETPOOJA_ACCESS_TOKEN`: `7337c1365cf2e61fe5f2b9f8d445db00dc6c39a1`
-   - `PETPOOJA_REST_ID`: Your Restaurant Outlet ID in Petpooja (e.g. `SAMPLE_REST_101`)
+   - `PETPOOJA_REST_ID`: Your Restaurant Outlet ID in Petpooja (e.g. `3w51vcd6et`)
    - `SHOPIFY_WEBHOOK_SECRET`: *(Optional for HMAC check)*
 3. Click **Deploy**.
 

@@ -26,7 +26,7 @@ export class PetpoojaOrderMapper {
     const appKey = options?.appKey || process.env.PETPOOJA_APP_KEY || "rps3igv8ucfhydx01ao6k9ebnz75tqw4";
     const appSecret = options?.appSecret || process.env.PETPOOJA_APP_SECRET || "71b70724b84d8d8ea06fe9cc0da105b07c412228";
     const accessToken = options?.accessToken || process.env.PETPOOJA_ACCESS_TOKEN || "7337c1365cf2e61fe5f2b9f8d445db00dc6c39a1";
-    const restId = options?.restId || process.env.PETPOOJA_REST_ID || "SAMPLE_REST_101";
+    const restId = options?.restId || process.env.PETPOOJA_REST_ID || "3w51vcd6et";
     const defaultOrderType = options?.defaultOrderType || process.env.DEFAULT_ORDER_TYPE || "Delivery";
     const appUrl = process.env.APP_URL || "https://petpooja-middleware1.vercel.app";
     const callbackUrl = options?.callbackUrl || `${appUrl.replace(/\/$/, "")}/api/petpooja/order-callback`;

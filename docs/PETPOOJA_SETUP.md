@@ -30,7 +30,7 @@ PETPOOJA_ENV="staging"
 PETPOOJA_APP_KEY="rps3igv8ucfhydx01ao6k9ebnz75tqw4"
 PETPOOJA_APP_SECRET="71b70724b84d8d8ea06fe9cc0da105b07c412228"
 PETPOOJA_ACCESS_TOKEN="7337c1365cf2e61fe5f2b9f8d445db00dc6c39a1"
-PETPOOJA_REST_ID="SAMPLE_REST_101"
+PETPOOJA_REST_ID="3w51vcd6et"
 ```
 
 ---
@@ -69,7 +69,7 @@ Navigate to `https://developerapi.petpooja.com/developers/configuration/` and co
   {
     "success": "1",
     "message": "Order saved successfully",
-    "restID": "SAMPLE_REST_101",
+    "restID": "3w51vcd6et",
     "clientOrderID": "1001",
     "orderID": "PETPOOJA_POS_987654"
   }
@@ -79,7 +79,7 @@ Navigate to `https://developerapi.petpooja.com/developers/configuration/` and co
 When POS staff clicks **Accept**, **Reject**, or **Food Ready**, Petpooja automatically POSTs to the `callback_url` specified during order creation:
 ```json
 {
-  "restID": "SAMPLE_REST_101",
+  "restID": "3w51vcd6et",
   "orderID": "1001",
   "status": "Accept",
   "cancel_reason": ""
