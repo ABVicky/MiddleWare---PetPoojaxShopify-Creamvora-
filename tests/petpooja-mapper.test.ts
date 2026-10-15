@@ -70,6 +70,7 @@ describe("Petpooja Order Mapper (V2.1.0)", () => {
     expect(orderInfo.Order.details.orderID).toBe("1002");
     expect(orderInfo.Order.details.payment_type).toBe("Prepaid");
     expect(orderInfo.Order.details.total).toBe("313.95");
+    expect(orderInfo.Order.details.enable_delivery).toBe(1);
     expect(orderInfo.Order.details.callback_url).toBe("https://my-app.vercel.app/api/petpooja/order-callback");
 
     expect(orderInfo.OrderItem.details).toHaveLength(1);
