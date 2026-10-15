@@ -42,7 +42,7 @@ sequenceDiagram
 
     Customer->>Shopify: Places order & completes checkout
     Shopify->>Middleware: POST /api/webhooks/shopify (HMAC Signed)
-    Note over Middleware: 1. Verify HMAC Signature<br/>2. Format line items, taxes & customer details<br/>3. Attach Restaurant ID (3w51vcd6et) & Brand Name
+    Note over Middleware: 1. Verify HMAC Signature<br/>2. Format line items, taxes & customer details<br/>3. Attach Restaurant ID & Brand Name
     Middleware->>Petpooja: POST /V1/save_order
     Petpooja-->>Middleware: {"success": "1", "orderID": "POS_ID"}
     Middleware-->>Shopify: 200 OK (Acknowledged)
@@ -59,7 +59,7 @@ sequenceDiagram
 - **Production Domain**: `https://petpooja-middleware1.vercel.app`
 - **GitHub Repository**: [`ABVicky/MiddleWare---PetPoojaxShopify-Creamvora-`](https://github.com/ABVicky/MiddleWare---PetPoojaxShopify-Creamvora-)
 - **Default Brand Name**: `Cremevora: Luxury Cakes, Mindfully Crafted`
-- **Restaurant Outlet ID**: `3w51vcd6et`
+- **Restaurant Outlet ID**: Configured in Vercel (`PETPOOJA_REST_ID`)
 
 ---
 
@@ -85,15 +85,15 @@ All endpoints run as serverless routes on Vercel:
 
 In your **Vercel Dashboard** ➔ **Settings** ➔ **Environment Variables**:
 
-| Variable | Description | Production Value |
+| Variable | Description | Value |
 | :--- | :--- | :--- |
 | `APP_URL` | Live middleware base URL | `https://petpooja-middleware1.vercel.app` |
 | `PETPOOJA_ENV` | API Target (`staging` or `production`) | `staging` |
-| `PETPOOJA_REST_ID` | Your Petpooja Outlet ID | `3w51vcd6et` |
+| `PETPOOJA_REST_ID` | Your Petpooja Outlet ID | `your_restaurant_outlet_id` |
 | `PETPOOJA_RESTAURANT_NAME` | Your Brand Name on POS | `Cremevora: Luxury Cakes, Mindfully Crafted` |
-| `PETPOOJA_APP_KEY` | Petpooja Developer App Key | `rps3igv8ucfhydx01ao6k9ebnz75tqw4` |
-| `PETPOOJA_APP_SECRET` | Petpooja Developer App Secret | `71b70724b84d8d8ea06fe9cc0da105b07c412228` |
-| `PETPOOJA_ACCESS_TOKEN` | Petpooja Access Token | `7337c1365cf2e61fe5f2b9f8d445db00dc6c39a1` |
+| `PETPOOJA_APP_KEY` | Petpooja Developer App Key | `your_petpooja_app_key` |
+| `PETPOOJA_APP_SECRET` | Petpooja Developer App Secret | `your_petpooja_app_secret` |
+| `PETPOOJA_ACCESS_TOKEN` | Petpooja Access Token | `your_petpooja_access_token` |
 | `SHOPIFY_WEBHOOK_SECRET` | Webhook verification secret | *(From Shopify Webhook settings)* |
 | `DEFAULT_ORDER_TYPE` | Default Petpooja order type | `Delivery` |
 
@@ -135,14 +135,14 @@ Run this command from your terminal to verify that your Vercel deployment is com
 ```bash
 curl -X POST https://petpooja-middleware1.vercel.app/api/petpooja/get-status \
   -H "Content-Type: application/json" \
-  -d '{"restID": "3w51vcd6et"}'
+  -d '{"restID": "your_restaurant_outlet_id"}'
 ```
 
 **Expected Response:**
 ```json
 {
   "success": "1",
-  "restID": "3w51vcd6et",
+  "restID": "your_restaurant_outlet_id",
   "status": "1",
   "message": "Store is ONLINE"
 }

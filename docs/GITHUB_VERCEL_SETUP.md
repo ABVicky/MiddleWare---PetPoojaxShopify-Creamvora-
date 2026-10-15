@@ -23,10 +23,10 @@ This guide walks you through deploying the direct Shopify ➔ Petpooja POS integ
 | :--- | :--- | :--- |
 | `APP_URL` | `https://petpooja-middleware1.vercel.app` | Production app domain |
 | `PETPOOJA_ENV` | `staging` (or `production`) | Petpooja environment |
-| `PETPOOJA_APP_KEY` | `rps3igv8ucfhydx01ao6k9ebnz75tqw4` | Petpooja App Key |
-| `PETPOOJA_APP_SECRET` | `71b70724b84d8d8ea06fe9cc0da105b07c412228` | Petpooja App Secret |
-| `PETPOOJA_ACCESS_TOKEN` | `7337c1365cf2e61fe5f2b9f8d445db00dc6c39a1` | Petpooja Access Token |
-| `PETPOOJA_REST_ID` | `3w51vcd6et` | Your Petpooja Restaurant Outlet ID |
+| `PETPOOJA_APP_KEY` | `your_petpooja_app_key` | Petpooja App Key |
+| `PETPOOJA_APP_SECRET` | `your_petpooja_app_secret` | Petpooja App Secret |
+| `PETPOOJA_ACCESS_TOKEN` | `your_petpooja_access_token` | Petpooja Access Token |
+| `PETPOOJA_REST_ID` | `your_restaurant_outlet_id` | Your Petpooja Restaurant Outlet ID |
 | `SHOPIFY_WEBHOOK_SECRET` | `your_webhook_signing_secret` | (Optional) HMAC secret from Shopify |
 
 6. Click **Deploy**.
