@@ -62,6 +62,7 @@ describe("Petpooja Order Mapper (V2.1.0)", () => {
 
     const orderInfo = payload.orderinfo.OrderInfo;
     expect(orderInfo.Restaurant.details.restID).toBe("REST_101");
+    expect(orderInfo.Restaurant.details.res_name).toBe("Cremevora: Luxury Cakes, Mindfully Crafted");
     expect(orderInfo.Customer.details.name).toBe("Bruce Wayne");
     expect(orderInfo.Customer.details.email).toBe("bruce@waynecorp.com");
     expect(orderInfo.Customer.details.phone).toBe("+919999988888");

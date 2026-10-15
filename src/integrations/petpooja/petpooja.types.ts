@@ -68,6 +68,7 @@ export interface PetpoojaCustomerDetails {
 export interface PetpoojaRestaurantDetails {
   restID: string;
   res_name?: string;
+  name?: string;
   address?: string;
   contact_information?: string;
 }

@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
     const appSecret = process.env.PETPOOJA_APP_SECRET || "71b70724b84d8d8ea06fe9cc0da105b07c412228";
     const accessToken = process.env.PETPOOJA_ACCESS_TOKEN || "7337c1365cf2e61fe5f2b9f8d445db00dc6c39a1";
     const restId = process.env.PETPOOJA_REST_ID || "3w51vcd6et";
+    const restaurantName = process.env.PETPOOJA_RESTAURANT_NAME || "Cremevora: Luxury Cakes, Mindfully Crafted";
     const env = (process.env.PETPOOJA_ENV as "staging" | "production") || "staging";
 
     const petpoojaClient = new PetpoojaClient({
@@ -93,6 +94,7 @@ export async function POST(req: NextRequest) {
       appSecret,
       accessToken,
       restId,
+      restaurantName,
     });
 
     // DIRECT RELAY: Call Petpooja save_order API immediately

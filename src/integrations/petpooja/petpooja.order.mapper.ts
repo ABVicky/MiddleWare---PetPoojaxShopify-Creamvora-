@@ -7,6 +7,7 @@ export interface PetpoojaMapperOptions {
   appSecret: string;
   accessToken: string;
   restId: string;
+  restaurantName?: string;
   callbackUrl?: string;
   defaultOrderType?: string; // "Delivery" | "PickUp" | "DineIn"
 }
@@ -27,6 +28,10 @@ export class PetpoojaOrderMapper {
     const appSecret = options?.appSecret || process.env.PETPOOJA_APP_SECRET || "71b70724b84d8d8ea06fe9cc0da105b07c412228";
     const accessToken = options?.accessToken || process.env.PETPOOJA_ACCESS_TOKEN || "7337c1365cf2e61fe5f2b9f8d445db00dc6c39a1";
     const restId = options?.restId || process.env.PETPOOJA_REST_ID || "3w51vcd6et";
+    const restaurantName =
+      options?.restaurantName ||
+      process.env.PETPOOJA_RESTAURANT_NAME ||
+      "Cremevora: Luxury Cakes, Mindfully Crafted";
     const defaultOrderType = options?.defaultOrderType || process.env.DEFAULT_ORDER_TYPE || "Delivery";
     const appUrl = process.env.APP_URL || "https://petpooja-middleware1.vercel.app";
     const callbackUrl = options?.callbackUrl || `${appUrl.replace(/\/$/, "")}/api/petpooja/order-callback`;
@@ -107,6 +112,8 @@ export class PetpoojaOrderMapper {
           Restaurant: {
             details: {
               restID: restId,
+              res_name: restaurantName,
+              name: restaurantName,
             },
           },
           Customer: {
