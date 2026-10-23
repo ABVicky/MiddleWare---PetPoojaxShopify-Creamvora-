@@ -4,10 +4,10 @@
 [![Next.js 14](https://img.shields.io/badge/Next.js-14.2-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Vercel Hosted](https://img.shields.io/badge/Vercel-Serverless-black?style=for-the-badge&logo=vercel)](https://vercel.com/)
-[![Petpooja API](https://img.shields.io/badge/Petpooja-V2.1.0-orange?style=for-the-badge)](https://developerapi.petpooja.com/)
-[![Shopify](https://img.shields.io/badge/Shopify-Webhook-green?style=for-the-badge&logo=shopify)](https://shopify.dev/)
+[![Petpooja Production API](https://img.shields.io/badge/Petpooja-Production-green?style=for-the-badge)](https://developerapi.petpooja.com/)
+[![Shopify Webhook](https://img.shields.io/badge/Shopify-Webhook-green?style=for-the-badge&logo=shopify)](https://shopify.dev/)
 
-A ultra-fast, stateless, serverless middleware connecting online orders placed on **Shopify** directly into physical **Petpooja Restaurant POS** screens and Kitchen Display Systems (KDS) within milliseconds.
+An ultra-fast, stateless, serverless middleware connecting online orders placed on **Shopify** directly into physical **Petpooja Restaurant POS** screens and Kitchen Display Systems (KDS) in real-time.
 
 ---
 
@@ -22,10 +22,10 @@ This integration strictly operates using **only four technologies**—eliminatin
 └─────────────┘       └──────────────┘       └─────────────┘       └──────────────┘
 ```
 
-1. **Shopify**: Captures customer orders and dispatches signed real-time webhooks.
+1. **Shopify**: Captures customer orders and dispatches signed real-time webhooks (`orders/create`, `orders/updated`, `orders/cancelled`).
 2. **Vercel**: Executes stateless, edge-speed Next.js serverless functions with zero database lag.
-3. **GitHub**: Automates Continuous Integration & Deployment (CI/CD) on every push.
-4. **Petpooja**: Receives transformed orders on `/save_order` and renders them directly on kitchen screens.
+3. **GitHub**: Automates Continuous Integration & Deployment (CI/CD) on every push to `main`.
+4. **Petpooja**: Receives transformed orders on `/save_order` and cancellations on `/update_order_status`, rendering them directly on kitchen screens.
 
 ---
 
@@ -37,144 +37,193 @@ sequenceDiagram
     actor Customer as 🛒 Customer
     participant Shopify as 🛍️ Shopify Store
     participant Middleware as ⚡ Vercel Middleware (/api/webhooks/shopify)
-    participant Petpooja as 🏢 Petpooja API Gateway
-    participant POS as 🖥️ Kitchen POS Screen
+    participant Petpooja as 🏢 Petpooja Production Gateway
+    participant POS as 🖥️ Kitchen POS Screen (Cremevora)
 
+    rect rgb(240, 248, 255)
+    Note over Customer, POS: Order Creation Flow
     Customer->>Shopify: Places order & completes checkout
-    Shopify->>Middleware: POST /api/webhooks/shopify (HMAC Signed)
-    Note over Middleware: 1. Verify HMAC Signature<br/>2. Format line items, taxes & customer details<br/>3. Attach Restaurant ID & Brand Name
-    Middleware->>Petpooja: POST /V1/save_order
-    Petpooja-->>Middleware: {"success": "1", "orderID": "POS_ID"}
+    Shopify->>Middleware: POST /api/webhooks/shopify (Topic: orders/create)
+    Note over Middleware: 1. Verify HMAC Signature<br/>2. Format lines, taxes, discounts & customer address<br/>3. Attach Restaurant Code: ufgiv4ye0k
+    Middleware->>Petpooja: POST https://pponlineordercb.petpooja.com/save_order
+    Petpooja-->>Middleware: {"success": "1", "message": "Your order is saved."}
     Middleware-->>Shopify: 200 OK (Acknowledged)
     Petpooja->>POS: Instant Kitchen Order Ticket (KOT) Generated!
-    Note over POS: Kitchen staff accepts & marks "Food Ready"
-    POS->>Middleware: POST /api/petpooja/order-callback (Status: Accept / Food Ready)
-    Middleware-->>POS: {"success": "1", "message": "Status updated"}
+    end
+
+    rect rgb(255, 245, 245)
+    Note over Customer, POS: Order Cancellation Flow
+    Customer->>Shopify: Cancels order / Merchant voids order
+    Shopify->>Middleware: POST /api/webhooks/shopify (Topic: orders/cancelled)
+    Middleware->>Petpooja: POST https://pponlineordercb.petpooja.com/update_order_status (status: -1)
+    Petpooja-->>Middleware: {"success": "1", "message": "Order status updated successfully."}
+    Middleware-->>Shopify: 200 OK (Acknowledged)
+    Petpooja->>POS: Order marked as CANCELLED on POS
+    end
 ```
 
 ---
 
-## 🌐 Live Production Deployment
+## 🌐 Live Production Deployment Details
 
-- **Production Domain**: `https://petpooja-middleware1.vercel.app`
+- **Production Base URL**: `https://petpooja-middleware1.vercel.app`
 - **GitHub Repository**: [`ABVicky/MiddleWare---PetPoojaxShopify-Creamvora-`](https://github.com/ABVicky/MiddleWare---PetPoojaxShopify-Creamvora-)
-- **Brand / Restaurant**: `Cremevora`
+- **Brand / Restaurant Name**: `Cremevora`
 - **Petpooja Restaurant ID**: `451593`
-- **Restaurant Code (`restid`)**: `ufgiv4ye0k`
+- **Petpooja Restaurant Code (`restid`)**: `ufgiv4ye0k` *(Used as `restid` in all API calls)*
 
 ---
 
 ## 🔌 API Endpoints Reference
 
 ### 1. Inbound Middleware Endpoints (Hosted on Vercel)
-All endpoints run as serverless routes on Vercel:
 
 | Endpoint | Method | Source | Purpose |
 | :--- | :---: | :---: | :--- |
-| `/api/webhooks/shopify` | `POST` | Shopify | Receives new order & cancellation notifications, validates HMAC, and relays to Petpooja. |
+| `/api/webhooks/shopify` | `POST` | Shopify | Ingests `orders/create`, `orders/updated`, and `orders/cancelled`, validates HMAC, and relays to Petpooja. |
+| `/api/petpooja/get-status` | `POST` | Petpooja | Petpooja heartbeat polling (returns `"status": "1"` - Online). |
 | `/api/petpooja/order-callback` | `POST` | Petpooja | Receives order lifecycle updates (Accept, Food Ready, Dispatched, Cancel). |
-| `/api/petpooja/update-order-status` | `POST` | Internal/Shopify | Relays order cancellation updates to Petpooja `/update_order_status`. |
-| `/api/petpooja/rider-status` | `POST` | Internal/Partner | Relays rider & delivery updates to Petpooja `/rider_status_update`. |
-| `/api/petpooja/get-status` | `POST` | Petpooja | Store heartbeat check (returns `"status": "1"` - Online). |
+| `/api/petpooja/update-order-status` | `POST` | Internal/API | Manual or programmatic order cancellation relay to Petpooja. |
+| `/api/petpooja/rider-status` | `POST` | Internal/API | Dispatches delivery executive & rider details to Petpooja. |
 | `/api/petpooja/update-status` | `POST` | Petpooja | Allows POS manager to toggle store open/close state. |
 | `/api/petpooja/menu-push` | `POST` | Petpooja | Receives catalog menu updates from Petpooja. |
 | `/api/petpooja/item-on` | `POST` | Petpooja | Signals that an out-of-stock item is back in stock. |
 | `/api/petpooja/item-off` | `POST` | Petpooja | Signals that an item has been toggled out of stock at POS. |
 
-### 2. Petpooja Production Endpoints (Target)
-| Operation | Method | Production URL |
+### 2. Petpooja Production Target Endpoints
+
+| Operation | Method | Target Production Endpoint |
 | :--- | :---: | :--- |
 | **Order Relay** | `POST` | `https://pponlineordercb.petpooja.com/save_order` |
-| **Rider Status Update** | `POST` | `https://pponlineordercb.petpooja.com/rider_status_update` |
 | **Order Status Update (Cancel)** | `POST` | `https://pponlineordercb.petpooja.com/update_order_status` |
+| **Rider Status Update** | `POST` | `https://pponlineordercb.petpooja.com/rider_status_update` |
 
 ---
 
-## ⚙️ Configuration & Setup
+## ⚙️ Configuration & Environment Variables
 
-### 1. Environment Variables in Vercel
+### Environment Variables in Vercel
 
-In your **Vercel Dashboard** ➔ **Settings** ➔ **Environment Variables**:
+Configured in your **Vercel Project Dashboard** ➔ **Settings** ➔ **Environment Variables**:
 
-| Variable | Description | Production Value |
+| Variable | Description | Setting / Value |
 | :--- | :--- | :--- |
 | `APP_URL` | Live middleware base URL | `https://petpooja-middleware1.vercel.app` |
-| `PETPOOJA_ENV` | API Target | `production` |
-| `PETPOOJA_APP_KEY` | Petpooja API Key | `iksfvd458an7y91etcmqo0jph6wrxbg3` |
-| `PETPOOJA_APP_SECRET` | Petpooja API Secret Key | `a36bed2ad5c3a821948a29c60ec53bb4d4df0051` |
+| `PETPOOJA_ENV` | Target API Environment | `production` |
+| `PETPOOJA_APP_KEY` | Petpooja Developer API Key | `iksfvd458an7y91etcmqo0jph6wrxbg3` |
+| `PETPOOJA_APP_SECRET` | Petpooja Developer API Secret | `a36bed2ad5c3a821948a29c60ec53bb4d4df0051` |
 | `PETPOOJA_ACCESS_TOKEN` | Petpooja API Access Token | `f756c3e36c915db29339bc8b139bfdd2f4abf4e3` |
 | `PETPOOJA_REST_ID` | Petpooja Restaurant Code (`restid`) | `ufgiv4ye0k` |
 | `PETPOOJA_RESTAURANT_ID` | Petpooja Restaurant ID | `451593` |
 | `PETPOOJA_RESTAURANT_NAME` | Restaurant Brand Name | `Cremevora` |
-| `PETPOOJA_ORDER_API_URL` | Order Relay Endpoint | `https://pponlineordercb.petpooja.com/save_order` |
-| `PETPOOJA_RIDER_STATUS_URL` | Rider Status Update Endpoint | `https://pponlineordercb.petpooja.com/rider_status_update` |
-| `PETPOOJA_UPDATE_ORDER_STATUS_URL` | Order Status Update (Cancel) | `https://pponlineordercb.petpooja.com/update_order_status` |
-| `SHOPIFY_WEBHOOK_SECRET` | Webhook verification secret | *(From Shopify Webhook settings)* |
+| `PETPOOJA_ORDER_API_URL` | Production Order Relay URL | `https://pponlineordercb.petpooja.com/save_order` |
+| `PETPOOJA_UPDATE_ORDER_STATUS_URL`| Production Order Cancel URL | `https://pponlineordercb.petpooja.com/update_order_status` |
+| `PETPOOJA_RIDER_STATUS_URL` | Production Rider Status URL | `https://pponlineordercb.petpooja.com/rider_status_update` |
+| `SHOPIFY_WEBHOOK_SECRET` | Shopify HMAC Webhook signing secret | *(From Shopify Notifications -> Webhooks)* |
 | `DEFAULT_ORDER_TYPE` | Default Petpooja order type | `Delivery` |
 
 ---
 
-### 2. Configure Shopify Webhooks
+## 🚀 Setup Instructions
 
-1. Open your **Shopify Admin** dashboard.
+### 1. Configure Shopify Webhooks
+1. Open your **Shopify Store Admin**.
 2. Navigate to **Settings** ➔ **Notifications** ➔ Scroll down to **Webhooks**.
-3. Click **Create Webhook**:
+3. Create Webhook for Order Creation:
    - **Event**: `Order creation`
    - **Format**: `JSON`
    - **URL**: `https://petpooja-middleware1.vercel.app/api/webhooks/shopify`
-   - **Webhook API Version**: `Latest (2024-01 or later)`
-4. Click **Save**.
+   - **Webhook API Version**: `Latest`
+4. Create Webhook for Order Cancellation:
+   - **Event**: `Order cancellation`
+   - **Format**: `JSON`
+   - **URL**: `https://petpooja-middleware1.vercel.app/api/webhooks/shopify`
+   - **Webhook API Version**: `Latest`
 
----
-
-### 3. Configure Petpooja Developer Portal
-
-1. Log in to [Petpooja Developer Configuration](https://developerapi.petpooja.com/developers/configuration/).
+### 2. Configure Petpooja Developer Portal
+1. Log in to the [Petpooja Developer Portal](https://developerapi.petpooja.com/developers/configuration/).
 2. Fill in the callback endpoints:
    - **Base URL**: `https://petpooja-middleware1.vercel.app`
-   - **Menu Sharing Endpoint**: `/api/petpooja/menu-push`
    - **Get Store Status API Endpoint**: `/api/petpooja/get-status`
    - **Update Store Status API Endpoint**: `/api/petpooja/update-status`
+   - **Menu Sharing Endpoint**: `/api/petpooja/menu-push`
    - **Item Off API Endpoint**: `/api/petpooja/item-off`
    - **Item On API Endpoint**: `/api/petpooja/item-on`
-   - **Enable Order Relay**: Check the checkbox `[x]`
+   - **Enable Order Relay**: Check `[x]`
 3. Click **Save Configurations**.
 
 ---
 
-## 🧪 Testing & Verification
+## 🧪 Live Verification & Testing
 
-### 1. Verify Petpooja Integration Live
-Run this command from your terminal to verify that your Vercel deployment is communicating with Petpooja:
-
+### 1. Test Store Status Heartbeat
 ```bash
 curl -X POST https://petpooja-middleware1.vercel.app/api/petpooja/get-status \
   -H "Content-Type: application/json" \
-  -d '{"restID": "your_restaurant_outlet_id"}'
+  -d '{"restID": "ufgiv4ye0k"}'
+```
+**Response:**
+```json
+{"success":"1","restID":"ufgiv4ye0k","status":"1","message":"Store is ONLINE"}
 ```
 
-**Expected Response:**
+### 2. Test Order Creation Relay
+```bash
+curl -X POST https://petpooja-middleware1.vercel.app/api/webhooks/shopify \
+  -H "Content-Type: application/json" \
+  -H "x-shopify-webhook-id: test-order-1001" \
+  -H "x-shopify-topic: orders/create" \
+  -d '{
+    "id": 9988776655,
+    "name": "#TEST-1001",
+    "order_number": 1001,
+    "email": "customer@cremevora.com",
+    "phone": "+919876543210",
+    "created_at": "2026-10-23T11:30:00+05:30",
+    "financial_status": "paid",
+    "currency": "INR",
+    "total_price": "1250.00",
+    "subtotal_price": "1200.00",
+    "total_tax": "50.00",
+    "tax_lines": [{"title": "GST", "price": "50.00", "rate": 0.05}],
+    "payment_gateway_names": ["Razorpay"],
+    "shipping_address": {
+      "first_name": "Aarav",
+      "last_name": "Sharma",
+      "phone": "+919876543210",
+      "address1": "Flat 402, Sunshine Heights, Linking Road",
+      "city": "Mumbai",
+      "province": "Maharashtra",
+      "zip": "400050",
+      "country": "India"
+    },
+    "line_items": [{
+      "id": 1122334455,
+      "title": "Belgian Dark Chocolate Truffle Cake (500g)",
+      "sku": "CAKE-CHOC-500",
+      "quantity": 1,
+      "price": "1200.00",
+      "tax_lines": [{"title": "GST", "price": "50.00", "rate": 0.05}]
+    }]
+  }'
+```
+**Response:**
 ```json
 {
-  "success": "1",
-  "restID": "your_restaurant_outlet_id",
-  "status": "1",
-  "message": "Store is ONLINE"
+  "success": true,
+  "message": "Order directly synced and relayed to Petpooja POS",
+  "clientOrderID": "1001",
+  "status": "SYNCED_TO_PETPOOJA"
 }
-```
-
-### 2. Validate Production Next.js Build
-```bash
-npx next build
 ```
 
 ---
 
-## 🛡️ Security & Privacy
+## 🛡️ Security & PCI Compliance
 
-- **HMAC Verification**: Every incoming webhook payload from Shopify is cryptographically verified using SHA-256 HMAC and `crypto.timingSafeEqual` to prevent timing attacks.
-- **PII Scrubbing**: Customer phone numbers, emails, and sensitive keys are sanitized in logging outputs via `src/lib/redact.ts`.
-- **Stateless Isolation**: Customer payment details (credit cards, UPI IDs) are never parsed or stored, strictly conforming to PCI-DSS compliance.
+- **HMAC Verification**: Ingested webhooks are cryptographically validated using SHA-256 HMAC and `crypto.timingSafeEqual`.
+- **PII Redaction**: Customer emails, phone numbers, and internal secrets are scrubbed in application logging outputs.
+- **Stateless Relay**: Customer payment details (credit cards, UPI IDs) are never stored on external disks or databases, operating in volatile serverless memory only.
 
 ---
 
@@ -184,19 +233,28 @@ npx next build
 .
 ├── app/
 │   ├── api/
-│   │   ├── petpooja/            # Petpooja inbound callbacks (get-status, menu-push, etc.)
-│   │   └── webhooks/shopify/    # Shopify webhook direct relay route
+│   │   ├── petpooja/
+│   │   │   ├── get-status/            # Store online heartbeat check
+│   │   │   ├── update-status/         # POS store toggle
+│   │   │   ├── order-callback/        # Order lifecycle callback receiver
+│   │   │   ├── update-order-status/   # Order status update & cancel relay
+│   │   │   ├── rider-status/          # Rider delivery status relay
+│   │   │   ├── menu-push/             # Catalog menu sync
+│   │   │   ├── item-on/               # In-stock toggle
+│   │   │   └── item-off/              # Out-of-stock toggle
+│   │   └── webhooks/shopify/          # Shopify direct webhook receiver
 │   ├── layout.tsx
-│   └── page.tsx                 # Clean healthcheck & status landing page
+│   └── page.tsx                       # Live middleware health check page
 ├── src/
 │   ├── integrations/
-│   │   ├── petpooja/            # Petpooja API Client, Types & Order Mapper
-│   │   └── shopify/             # Shopify Webhook Signature Verifier & Types
-│   ├── lib/                     # Logger, redaction, and error handlers
-│   └── services/                # Precision billing & GST breakdown calculations
-└── docs/                        # Complete setup guides & Petpooja specs
+│   │   ├── petpooja/                  # Petpooja Client, Types, Schemas, Mapper
+│   │   └── shopify/                   # Shopify Webhook Verifier, Types, Schemas
+│   ├── lib/                           # Logger, redaction, error handling
+│   └── services/                      # Decimal.js billing & GST calculator
+└── docs/                              # Integration specs and documentation
 ```
 
 ---
 
 *Engineered with precision for **Cremevora: Luxury Cakes, Mindfully Crafted**.*
+
