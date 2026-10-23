@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const restId = body?.restID || process.env.PETPOOJA_REST_ID || "3w51vcd6et";
+    const restId = body?.restID || process.env.PETPOOJA_REST_ID || "ufgiv4ye0k";
 
     return NextResponse.json({
       success: "1",

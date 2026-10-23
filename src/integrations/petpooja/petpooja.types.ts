@@ -181,3 +181,39 @@ export interface PetpoojaCallbackPayload {
   cancel_reason?: string;
   minimum_prep_time?: string;
 }
+
+export interface PetpoojaUpdateOrderStatusPayload {
+  app_key: string;
+  app_secret: string;
+  access_token: string;
+  restID: string;
+  orderID?: string;
+  clientorderID: string;
+  cancelReason?: string;
+  status: number; // -1 for Cancelled
+}
+
+export interface PetpoojaUpdateOrderStatusResponse {
+  success: "1" | "0" | string;
+  message: string;
+  [key: string]: unknown;
+}
+
+export interface PetpoojaRiderStatusPayload {
+  app_key: string;
+  app_secret: string;
+  access_token: string;
+  restID: string;
+  orderID?: string;
+  clientorderID?: string;
+  status?: number | string;
+  rider_name?: string;
+  rider_phone_number?: string;
+}
+
+export interface PetpoojaRiderStatusResponse {
+  success: "1" | "0" | string;
+  message: string;
+  [key: string]: unknown;
+}
+

@@ -58,24 +58,35 @@ sequenceDiagram
 
 - **Production Domain**: `https://petpooja-middleware1.vercel.app`
 - **GitHub Repository**: [`ABVicky/MiddleWare---PetPoojaxShopify-Creamvora-`](https://github.com/ABVicky/MiddleWare---PetPoojaxShopify-Creamvora-)
-- **Default Brand Name**: `Cremevora: Luxury Cakes, Mindfully Crafted`
-- **Restaurant Outlet ID**: Configured in Vercel (`PETPOOJA_REST_ID`)
+- **Brand / Restaurant**: `Cremevora`
+- **Petpooja Restaurant ID**: `451593`
+- **Restaurant Code (`restid`)**: `ufgiv4ye0k`
 
 ---
 
 ## 🔌 API Endpoints Reference
 
+### 1. Inbound Middleware Endpoints (Hosted on Vercel)
 All endpoints run as serverless routes on Vercel:
 
 | Endpoint | Method | Source | Purpose |
 | :--- | :---: | :---: | :--- |
-| `/api/webhooks/shopify` | `POST` | Shopify | Receives new order notifications, validates HMAC, and relays to Petpooja `/save_order`. |
+| `/api/webhooks/shopify` | `POST` | Shopify | Receives new order & cancellation notifications, validates HMAC, and relays to Petpooja. |
 | `/api/petpooja/order-callback` | `POST` | Petpooja | Receives order lifecycle updates (Accept, Food Ready, Dispatched, Cancel). |
+| `/api/petpooja/update-order-status` | `POST` | Internal/Shopify | Relays order cancellation updates to Petpooja `/update_order_status`. |
+| `/api/petpooja/rider-status` | `POST` | Internal/Partner | Relays rider & delivery updates to Petpooja `/rider_status_update`. |
 | `/api/petpooja/get-status` | `POST` | Petpooja | Store heartbeat check (returns `"status": "1"` - Online). |
 | `/api/petpooja/update-status` | `POST` | Petpooja | Allows POS manager to toggle store open/close state. |
 | `/api/petpooja/menu-push` | `POST` | Petpooja | Receives catalog menu updates from Petpooja. |
 | `/api/petpooja/item-on` | `POST` | Petpooja | Signals that an out-of-stock item is back in stock. |
 | `/api/petpooja/item-off` | `POST` | Petpooja | Signals that an item has been toggled out of stock at POS. |
+
+### 2. Petpooja Production Endpoints (Target)
+| Operation | Method | Production URL |
+| :--- | :---: | :--- |
+| **Order Relay** | `POST` | `https://pponlineordercb.petpooja.com/save_order` |
+| **Rider Status Update** | `POST` | `https://pponlineordercb.petpooja.com/rider_status_update` |
+| **Order Status Update (Cancel)** | `POST` | `https://pponlineordercb.petpooja.com/update_order_status` |
 
 ---
 
@@ -85,15 +96,19 @@ All endpoints run as serverless routes on Vercel:
 
 In your **Vercel Dashboard** ➔ **Settings** ➔ **Environment Variables**:
 
-| Variable | Description | Value |
+| Variable | Description | Production Value |
 | :--- | :--- | :--- |
 | `APP_URL` | Live middleware base URL | `https://petpooja-middleware1.vercel.app` |
-| `PETPOOJA_ENV` | API Target (`staging` or `production`) | `staging` |
-| `PETPOOJA_REST_ID` | Your Petpooja Outlet ID | `your_restaurant_outlet_id` |
-| `PETPOOJA_RESTAURANT_NAME` | Your Brand Name on POS | `Cremevora: Luxury Cakes, Mindfully Crafted` |
-| `PETPOOJA_APP_KEY` | Petpooja Developer App Key | `your_petpooja_app_key` |
-| `PETPOOJA_APP_SECRET` | Petpooja Developer App Secret | `your_petpooja_app_secret` |
-| `PETPOOJA_ACCESS_TOKEN` | Petpooja Access Token | `your_petpooja_access_token` |
+| `PETPOOJA_ENV` | API Target | `production` |
+| `PETPOOJA_APP_KEY` | Petpooja API Key | `iksfvd458an7y91etcmqo0jph6wrxbg3` |
+| `PETPOOJA_APP_SECRET` | Petpooja API Secret Key | `a36bed2ad5c3a821948a29c60ec53bb4d4df0051` |
+| `PETPOOJA_ACCESS_TOKEN` | Petpooja API Access Token | `f756c3e36c915db29339bc8b139bfdd2f4abf4e3` |
+| `PETPOOJA_REST_ID` | Petpooja Restaurant Code (`restid`) | `ufgiv4ye0k` |
+| `PETPOOJA_RESTAURANT_ID` | Petpooja Restaurant ID | `451593` |
+| `PETPOOJA_RESTAURANT_NAME` | Restaurant Brand Name | `Cremevora` |
+| `PETPOOJA_ORDER_API_URL` | Order Relay Endpoint | `https://pponlineordercb.petpooja.com/save_order` |
+| `PETPOOJA_RIDER_STATUS_URL` | Rider Status Update Endpoint | `https://pponlineordercb.petpooja.com/rider_status_update` |
+| `PETPOOJA_UPDATE_ORDER_STATUS_URL` | Order Status Update (Cancel) | `https://pponlineordercb.petpooja.com/update_order_status` |
 | `SHOPIFY_WEBHOOK_SECRET` | Webhook verification secret | *(From Shopify Webhook settings)* |
 | `DEFAULT_ORDER_TYPE` | Default Petpooja order type | `Delivery` |
 

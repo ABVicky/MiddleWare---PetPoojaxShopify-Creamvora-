@@ -3,6 +3,10 @@ import {
   PetpoojaSaveOrderPayload,
   PetpoojaSaveOrderResponse,
   PetpoojaMenuResponse,
+  PetpoojaUpdateOrderStatusPayload,
+  PetpoojaUpdateOrderStatusResponse,
+  PetpoojaRiderStatusPayload,
+  PetpoojaRiderStatusResponse,
 } from "./petpooja.types";
 import { PetpoojaSaveOrderResponseSchema } from "./petpooja.schemas";
 import { PetpoojaError } from "./petpooja.errors";
@@ -13,6 +17,8 @@ export interface PetpoojaClientConfig {
   accessToken: string;
   restId: string;
   orderApiUrl?: string;
+  riderStatusUrl?: string;
+  updateOrderStatusUrl?: string;
   menuApiUrl?: string;
   storeApiUrl?: string;
   stockApiUrl?: string;
@@ -25,6 +31,8 @@ export class PetpoojaClient {
   private accessToken: string;
   private restId: string;
   private orderApiUrl: string;
+  private riderStatusUrl: string;
+  private updateOrderStatusUrl: string;
   private menuApiUrl: string;
   private storeApiUrl: string;
   private stockApiUrl: string;
@@ -35,11 +43,19 @@ export class PetpoojaClient {
     this.appSecret = config.appSecret;
     this.accessToken = config.accessToken;
     this.restId = config.restId;
-    this.env = config.env || (process.env.PETPOOJA_ENV as "staging" | "production") || "staging";
+    this.env = config.env || (process.env.PETPOOJA_ENV as "staging" | "production") || "production";
     this.orderApiUrl =
       config.orderApiUrl ||
       process.env.PETPOOJA_ORDER_API_URL ||
-      "https://47pfzh5sf2.execute-api.ap-southeast-1.amazonaws.com/V1/save_order";
+      "https://pponlineordercb.petpooja.com/save_order";
+    this.riderStatusUrl =
+      config.riderStatusUrl ||
+      process.env.PETPOOJA_RIDER_STATUS_URL ||
+      "https://pponlineordercb.petpooja.com/rider_status_update";
+    this.updateOrderStatusUrl =
+      config.updateOrderStatusUrl ||
+      process.env.PETPOOJA_UPDATE_ORDER_STATUS_URL ||
+      "https://pponlineordercb.petpooja.com/update_order_status";
     this.menuApiUrl =
       config.menuApiUrl ||
       process.env.PETPOOJA_MENU_API_URL ||
@@ -153,4 +169,124 @@ export class PetpoojaClient {
       };
     }
   }
+
+  /**
+   * Pushes an order status update (e.g., cancellation) to the Petpooja POS.
+   */
+  async updateOrderStatus(params: {
+    clientOrderId: string;
+    orderId?: string;
+    cancelReason?: string;
+    status?: number;
+    restId?: string;
+  }): Promise<PetpoojaUpdateOrderStatusResponse> {
+    const payload: PetpoojaUpdateOrderStatusPayload = {
+      app_key: this.appKey,
+      app_secret: this.appSecret,
+      access_token: this.accessToken,
+      restID: params.restId || this.restId,
+      orderID: params.orderId || "",
+      clientorderID: params.clientOrderId,
+      cancelReason: params.cancelReason || "Cancelled by customer/store",
+      status: params.status ?? -1,
+    };
+
+    try {
+      logger.info("Sending update_order_status to Petpooja", {
+        clientOrderId: params.clientOrderId,
+        status: payload.status,
+        restID: payload.restID,
+      });
+
+      const response = await fetch(this.updateOrderStatusUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const rawText = await response.text();
+      let parsedData: unknown;
+      try {
+        parsedData = JSON.parse(rawText);
+      } catch {
+        throw new PetpoojaError(
+          `Invalid JSON response from Petpooja update_order_status (HTTP ${response.status}): ${rawText}`,
+          "NETWORK_ERROR",
+          { httpStatus: response.status }
+        );
+      }
+
+      return parsedData as PetpoojaUpdateOrderStatusResponse;
+    } catch (error) {
+      if (error instanceof PetpoojaError) throw error;
+      throw new PetpoojaError(
+        `Failed to reach Petpooja update_order_status endpoint: ${error instanceof Error ? error.message : String(error)}`,
+        "NETWORK_ERROR"
+      );
+    }
+  }
+
+  /**
+   * Pushes rider / delivery status updates to the Petpooja POS.
+   */
+  async updateRiderStatus(params: {
+    clientOrderId?: string;
+    orderId?: string;
+    status?: number | string;
+    riderName?: string;
+    riderPhoneNumber?: string;
+    restId?: string;
+  }): Promise<PetpoojaRiderStatusResponse> {
+    const payload: PetpoojaRiderStatusPayload = {
+      app_key: this.appKey,
+      app_secret: this.appSecret,
+      access_token: this.accessToken,
+      restID: params.restId || this.restId,
+      orderID: params.orderId || "",
+      clientorderID: params.clientOrderId || "",
+      status: params.status ?? 4,
+      rider_name: params.riderName || "",
+      rider_phone_number: params.riderPhoneNumber || "",
+    };
+
+    try {
+      logger.info("Sending rider_status_update to Petpooja", {
+        clientOrderId: params.clientOrderId,
+        status: payload.status,
+        riderName: payload.rider_name,
+        restID: payload.restID,
+      });
+
+      const response = await fetch(this.riderStatusUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const rawText = await response.text();
+      let parsedData: unknown;
+      try {
+        parsedData = JSON.parse(rawText);
+      } catch {
+        throw new PetpoojaError(
+          `Invalid JSON response from Petpooja rider_status_update (HTTP ${response.status}): ${rawText}`,
+          "NETWORK_ERROR",
+          { httpStatus: response.status }
+        );
+      }
+
+      return parsedData as PetpoojaRiderStatusResponse;
+    } catch (error) {
+      if (error instanceof PetpoojaError) throw error;
+      throw new PetpoojaError(
+        `Failed to reach Petpooja rider_status_update endpoint: ${error instanceof Error ? error.message : String(error)}`,
+        "NETWORK_ERROR"
+      );
+    }
+  }
 }
+

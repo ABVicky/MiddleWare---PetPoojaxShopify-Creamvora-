@@ -52,7 +52,76 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true }, { status: 200 });
   }
 
-  // 5. Direct Order Synchronization (orders/create, orders/updated)
+  // 5. Order Cancellation Synchronization (orders/cancelled)
+  if (topic === "orders/cancelled") {
+    const parseResult = ShopifyOrderWebhookSchema.safeParse(parsedJson);
+    if (!parseResult.success) {
+      logger.error("Shopify Order Schema validation failed on cancellation", parseResult.error, { deliveryId });
+      return NextResponse.json(
+        { error: "Payload schema mismatch", details: parseResult.error },
+        { status: 422 }
+      );
+    }
+
+    const order: ShopifyOrderWebhook = parseResult.data;
+    const clientOrderId = String(order.order_number || order.name.replace("#", ""));
+    const cancelReason = order.cancel_reason || "Cancelled in Shopify";
+
+    logger.info("Direct Sync: Processing Shopify Order Cancellation for Petpooja POS", {
+      orderNumber: order.order_number,
+      clientOrderId,
+      cancelReason,
+    });
+
+    const appKey = process.env.PETPOOJA_APP_KEY || "iksfvd458an7y91etcmqo0jph6wrxbg3";
+    const appSecret = process.env.PETPOOJA_APP_SECRET || "a36bed2ad5c3a821948a29c60ec53bb4d4df0051";
+    const accessToken = process.env.PETPOOJA_ACCESS_TOKEN || "f756c3e36c915db29339bc8b139bfdd2f4abf4e3";
+    const restId = process.env.PETPOOJA_REST_ID || "ufgiv4ye0k";
+    const env = (process.env.PETPOOJA_ENV as "staging" | "production") || "production";
+
+    const petpoojaClient = new PetpoojaClient({
+      appKey,
+      appSecret,
+      accessToken,
+      restId,
+      env,
+    });
+
+    try {
+      const cancelResponse = await petpoojaClient.updateOrderStatus({
+        clientOrderId,
+        cancelReason,
+        status: -1,
+      });
+
+      logger.info("Direct Sync: Order cancellation sent to Petpooja POS", {
+        clientOrderId,
+        cancelResponse,
+      });
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Order cancellation relayed to Petpooja POS",
+          clientOrderID: clientOrderId,
+          petpoojaResponse: cancelResponse,
+        },
+        { status: 200 }
+      );
+    } catch (error) {
+      logger.error("Direct Sync Cancellation to Petpooja failed", error, { clientOrderId });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Failed to push cancellation to Petpooja POS",
+          details: error instanceof Error ? error.message : String(error),
+        },
+        { status: 502 }
+      );
+    }
+  }
+
+  // 6. Direct Order Synchronization (orders/create, orders/updated)
   if (topic === "orders/create" || topic === "orders/updated") {
     const parseResult = ShopifyOrderWebhookSchema.safeParse(parsedJson);
     if (!parseResult.success) {
@@ -66,6 +135,49 @@ export async function POST(req: NextRequest) {
     const order: ShopifyOrderWebhook = parseResult.data;
     const clientOrderId = String(order.order_number || order.name.replace("#", ""));
 
+    // If order was updated to cancelled state
+    if (order.cancelled_at) {
+      const cancelReason = order.cancel_reason || "Cancelled in Shopify";
+      const appKey = process.env.PETPOOJA_APP_KEY || "iksfvd458an7y91etcmqo0jph6wrxbg3";
+      const appSecret = process.env.PETPOOJA_APP_SECRET || "a36bed2ad5c3a821948a29c60ec53bb4d4df0051";
+      const accessToken = process.env.PETPOOJA_ACCESS_TOKEN || "f756c3e36c915db29339bc8b139bfdd2f4abf4e3";
+      const restId = process.env.PETPOOJA_REST_ID || "ufgiv4ye0k";
+      const env = (process.env.PETPOOJA_ENV as "staging" | "production") || "production";
+
+      const petpoojaClient = new PetpoojaClient({
+        appKey,
+        appSecret,
+        accessToken,
+        restId,
+        env,
+      });
+
+      try {
+        const cancelResponse = await petpoojaClient.updateOrderStatus({
+          clientOrderId,
+          cancelReason,
+          status: -1,
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: "Updated order cancellation relayed to Petpooja POS",
+          clientOrderID: clientOrderId,
+          petpoojaResponse: cancelResponse,
+        });
+      } catch (cancelError) {
+        logger.error("Failed to sync cancellation to Petpooja", cancelError, { clientOrderId });
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Failed to push cancellation to Petpooja POS",
+            details: cancelError instanceof Error ? cancelError.message : String(cancelError),
+          },
+          { status: 502 }
+        );
+      }
+    }
+
     logger.info("Direct Sync: Processing Shopify Order for Petpooja POS", {
       orderNumber: order.order_number,
       clientOrderId,
@@ -73,12 +185,12 @@ export async function POST(req: NextRequest) {
     });
 
     // Petpooja API Credentials from Vercel Environment Variables
-    const appKey = process.env.PETPOOJA_APP_KEY || "rps3igv8ucfhydx01ao6k9ebnz75tqw4";
-    const appSecret = process.env.PETPOOJA_APP_SECRET || "71b70724b84d8d8ea06fe9cc0da105b07c412228";
-    const accessToken = process.env.PETPOOJA_ACCESS_TOKEN || "7337c1365cf2e61fe5f2b9f8d445db00dc6c39a1";
-    const restId = process.env.PETPOOJA_REST_ID || "3w51vcd6et";
-    const restaurantName = process.env.PETPOOJA_RESTAURANT_NAME || "Cremevora: Luxury Cakes, Mindfully Crafted";
-    const env = (process.env.PETPOOJA_ENV as "staging" | "production") || "staging";
+    const appKey = process.env.PETPOOJA_APP_KEY || "iksfvd458an7y91etcmqo0jph6wrxbg3";
+    const appSecret = process.env.PETPOOJA_APP_SECRET || "a36bed2ad5c3a821948a29c60ec53bb4d4df0051";
+    const accessToken = process.env.PETPOOJA_ACCESS_TOKEN || "f756c3e36c915db29339bc8b139bfdd2f4abf4e3";
+    const restId = process.env.PETPOOJA_REST_ID || "ufgiv4ye0k";
+    const restaurantName = process.env.PETPOOJA_RESTAURANT_NAME || "Cremevora";
+    const env = (process.env.PETPOOJA_ENV as "staging" | "production") || "production";
 
     const petpoojaClient = new PetpoojaClient({
       appKey,

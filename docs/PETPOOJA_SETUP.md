@@ -24,13 +24,15 @@ Petpooja authenticates API requests via a 3-part credential set issued per devel
 - **Access Token** (`access_token` / `access-token`): Integration bearer token.
 - **Restaurant ID** (`restID`): Identifier of the mapped restaurant outlet in Petpooja POS.
 
-### Staging Sandbox Credentials (from Developer Portal):
+### Production Authorization Details:
 ```env
-PETPOOJA_ENV="staging"
-PETPOOJA_APP_KEY="your_petpooja_app_key"
-PETPOOJA_APP_SECRET="your_petpooja_app_secret"
-PETPOOJA_ACCESS_TOKEN="your_petpooja_access_token"
-PETPOOJA_REST_ID="your_restaurant_outlet_id"
+PETPOOJA_ENV="production"
+PETPOOJA_APP_KEY="iksfvd458an7y91etcmqo0jph6wrxbg3"
+PETPOOJA_APP_SECRET="a36bed2ad5c3a821948a29c60ec53bb4d4df0051"
+PETPOOJA_ACCESS_TOKEN="f756c3e36c915db29339bc8b139bfdd2f4abf4e3"
+PETPOOJA_REST_ID="ufgiv4ye0k"
+PETPOOJA_RESTAURANT_ID="451593"
+PETPOOJA_RESTAURANT_NAME="Cremevora"
 ```
 
 ---
@@ -57,8 +59,19 @@ Navigate to `https://developerapi.petpooja.com/developers/configuration/` and co
 
 ### 4.1 Order Push: `/save_order`
 - **Method**: `POST`
-- **Production URL**: `https://47pfzh5sf2.execute-api.ap-southeast-1.amazonaws.com/V1/save_order`
+- **Production URL**: `https://pponlineordercb.petpooja.com/save_order`
 - **Authentication**: Sent in JSON body: `app_key`, `app_secret`, `access_token`.
+
+### 4.2 Rider Status Update: `/rider_status_update`
+- **Method**: `POST`
+- **Production URL**: `https://pponlineordercb.petpooja.com/rider_status_update`
+- **Authentication**: Sent in JSON body: `app_key`, `app_secret`, `access_token`.
+
+### 4.3 Order Status Update (Cancel): `/update_order_status`
+- **Method**: `POST`
+- **Production URL**: `https://pponlineordercb.petpooja.com/update_order_status`
+- **Authentication**: Sent in JSON body: `app_key`, `app_secret`, `access_token`.
+
 - **Key Payload Structures**:
   - `OrderInfo.Restaurant.details`: `restID`
   - `OrderInfo.Customer.details`: `name`, `email`, `phone`, `address`, `latitude`, `longitude`

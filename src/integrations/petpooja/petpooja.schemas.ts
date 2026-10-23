@@ -15,6 +15,9 @@ export const PetpoojaCallbackSchema = z.object({
   status: z.string(),
   cancel_reason: z.string().optional(),
   minimum_prep_time: z.string().optional(),
+  minimum_delivery_time: z.string().optional(),
+  rider_name: z.string().optional(),
+  rider_phone_number: z.string().optional(),
 });
 
 export const PetpoojaStoreStatusSchema = z.object({

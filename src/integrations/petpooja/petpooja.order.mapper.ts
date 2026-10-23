@@ -26,14 +26,14 @@ export class PetpoojaOrderMapper {
   ): PetpoojaSaveOrderPayload {
     const billing = BillingCalculator.calculateBilling(order);
 
-    const appKey = options?.appKey || process.env.PETPOOJA_APP_KEY || "rps3igv8ucfhydx01ao6k9ebnz75tqw4";
-    const appSecret = options?.appSecret || process.env.PETPOOJA_APP_SECRET || "71b70724b84d8d8ea06fe9cc0da105b07c412228";
-    const accessToken = options?.accessToken || process.env.PETPOOJA_ACCESS_TOKEN || "7337c1365cf2e61fe5f2b9f8d445db00dc6c39a1";
-    const restId = options?.restId || process.env.PETPOOJA_REST_ID || "3w51vcd6et";
+    const appKey = options?.appKey || process.env.PETPOOJA_APP_KEY || "iksfvd458an7y91etcmqo0jph6wrxbg3";
+    const appSecret = options?.appSecret || process.env.PETPOOJA_APP_SECRET || "a36bed2ad5c3a821948a29c60ec53bb4d4df0051";
+    const accessToken = options?.accessToken || process.env.PETPOOJA_ACCESS_TOKEN || "f756c3e36c915db29339bc8b139bfdd2f4abf4e3";
+    const restId = options?.restId || process.env.PETPOOJA_REST_ID || "ufgiv4ye0k";
     const restaurantName =
       options?.restaurantName ||
       process.env.PETPOOJA_RESTAURANT_NAME ||
-      "Cremevora: Luxury Cakes, Mindfully Crafted";
+      "Cremevora";
     const restaurantAddress =
       options?.restaurantAddress ||
       process.env.PETPOOJA_RESTAURANT_ADDRESS ||

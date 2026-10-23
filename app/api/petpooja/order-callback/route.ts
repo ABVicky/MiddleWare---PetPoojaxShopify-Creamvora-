@@ -14,8 +14,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: "0", message: "Invalid callback payload" }, { status: 400 });
     }
 
-    const { restID, orderID, status, cancel_reason } = validation.data;
-    logger.info("Petpooja order callback received", { restID, orderID, status, cancel_reason });
+    const { restID, orderID, status, cancel_reason, rider_name, rider_phone_number } = validation.data;
+    logger.info("Petpooja order callback received", { restID, orderID, status, cancel_reason, rider_name, rider_phone_number });
 
     return NextResponse.json({ success: "1", message: "Callback processed successfully" });
   } catch (error) {

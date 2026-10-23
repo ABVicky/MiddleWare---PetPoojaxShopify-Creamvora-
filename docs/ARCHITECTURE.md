@@ -21,7 +21,8 @@ The middleware orchestrates end-to-end real-time synchronization between an auth
        ▼
 [Petpooja Online Ordering API Adapter (V2.1.0)]
        │
-       ├─► [POST https://47pfzh5sf2.execute-api.ap-southeast-1.amazonaws.com/V1/save_order]
+       ├─► [POST https://pponlineordercb.petpooja.com/save_order]
+       ├─► [POST https://pponlineordercb.petpooja.com/update_order_status (on cancel)]
        ├─► [Response Validation: success === "1", extract POS orderID]
        │
        ▼
