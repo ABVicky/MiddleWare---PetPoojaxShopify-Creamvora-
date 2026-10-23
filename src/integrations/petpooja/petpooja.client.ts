@@ -44,18 +44,25 @@ export class PetpoojaClient {
     this.accessToken = config.accessToken;
     this.restId = config.restId;
     this.env = config.env || (process.env.PETPOOJA_ENV as "staging" | "production") || "production";
+    const isStaging = this.env === "staging";
     this.orderApiUrl =
       config.orderApiUrl ||
       process.env.PETPOOJA_ORDER_API_URL ||
-      "https://pponlineordercb.petpooja.com/save_order";
+      (isStaging
+        ? "https://47pfzh5sf2.execute-api.ap-southeast-1.amazonaws.com/V1/save_order"
+        : "https://pponlineordercb.petpooja.com/save_order");
     this.riderStatusUrl =
       config.riderStatusUrl ||
       process.env.PETPOOJA_RIDER_STATUS_URL ||
-      "https://pponlineordercb.petpooja.com/rider_status_update";
+      (isStaging
+        ? "https://qle1yy2ydc.execute-api.ap-southeast-1.amazonaws.com/V1/rider_status_update"
+        : "https://pponlineordercb.petpooja.com/rider_status_update");
     this.updateOrderStatusUrl =
       config.updateOrderStatusUrl ||
       process.env.PETPOOJA_UPDATE_ORDER_STATUS_URL ||
-      "https://pponlineordercb.petpooja.com/update_order_status";
+      (isStaging
+        ? "https://qle1yy2ydc.execute-api.ap-southeast-1.amazonaws.com/V1/update_order_status"
+        : "https://pponlineordercb.petpooja.com/update_order_status");
     this.menuApiUrl =
       config.menuApiUrl ||
       process.env.PETPOOJA_MENU_API_URL ||

@@ -59,11 +59,11 @@ export class PetpoojaOrderMapper {
 
     // Customer formatting
     const customerName = [
-      order.customer?.first_name || order.shipping_address?.first_name || "",
-      order.customer?.last_name || order.shipping_address?.last_name || "",
+      order.customer?.first_name || order.shipping_address?.first_name || order.billing_address?.first_name || "",
+      order.customer?.last_name || order.shipping_address?.last_name || order.billing_address?.last_name || "",
     ]
       .join(" ")
-      .trim() || order.shipping_address?.name || "Shopify Customer";
+      .trim() || order.shipping_address?.name || order.billing_address?.name || "Shopify Customer";
 
     const customerAddress = [
       order.shipping_address?.address1,
@@ -72,6 +72,15 @@ export class PetpoojaOrderMapper {
       order.shipping_address?.province,
       order.shipping_address?.zip,
       order.shipping_address?.country,
+    ]
+      .filter(Boolean)
+      .join(", ") || [
+      order.billing_address?.address1,
+      order.billing_address?.address2,
+      order.billing_address?.city,
+      order.billing_address?.province,
+      order.billing_address?.zip,
+      order.billing_address?.country,
     ]
       .filter(Boolean)
       .join(", ") || "Store Pickup / Not Provided";
@@ -184,7 +193,7 @@ export class PetpoojaOrderMapper {
               email: order.email || order.customer?.email || "",
               name: customerName,
               address: customerAddress,
-              phone: order.phone || order.customer?.phone || order.shipping_address?.phone || "",
+              phone: order.phone || order.customer?.phone || order.shipping_address?.phone || order.billing_address?.phone || "",
               latitude: order.shipping_address?.latitude ? String(order.shipping_address.latitude) : "",
               longitude: order.shipping_address?.longitude ? String(order.shipping_address.longitude) : "",
             },
