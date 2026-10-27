@@ -52,10 +52,12 @@ In your **Vercel Project Dashboard** ➔ **Settings** ➔ **Environment Variable
 ## 4. Testing & Verification
 
 You can query the live mappings via the middleware API:
-- **Inspect all mappings**: `GET https://<YOUR-VERCEL-DOMAIN>/api/mappings`
+- **Inspect all mappings**:
+  - `GET https://<YOUR-VERCEL-DOMAIN>/api/mappings`
+  - `GET https://<YOUR-VERCEL-DOMAIN>/api/petpooja/mappings`
 - **Test a line item lookup**:
   ```bash
-  curl -X POST https://<YOUR-VERCEL-DOMAIN>/api/mappings \
+  curl -X POST https://<YOUR-VERCEL-DOMAIN>/api/petpooja/mappings \
     -H "Content-Type: application/json" \
     -d '{"title": "Belgian Dark Chocolate Truffle Cake (500g)", "sku": "CAKE-CHOC-500"}'
   ```
