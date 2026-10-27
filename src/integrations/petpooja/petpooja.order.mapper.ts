@@ -1,6 +1,7 @@
 import { ShopifyOrderWebhook } from "@/src/integrations/shopify/shopify.types";
 import { BillingCalculator } from "@/src/services/billing-calculator";
 import { PetpoojaSaveOrderPayload, PetpoojaOrderItem } from "./petpooja.types";
+import { findCakeMapping, CakeItemMapping } from "@/src/config/cake-mappings";
 
 export interface PetpoojaMapperOptions {
   appKey: string;
@@ -85,15 +86,24 @@ export class PetpoojaOrderMapper {
       .filter(Boolean)
       .join(", ") || "Store Pickup / Not Provided";
 
-    // Direct Line Items Auto-Mapping
+    // Line Items Mapping: Resolve Petpooja item ID parallel to Shopify ID for each cake
     const orderItems: PetpoojaOrderItem[] = order.line_items.map((line, idx) => {
       const unitPrice = parseFloat(line.price || "0").toFixed(2);
       const discount = parseFloat(line.total_discount || "0").toFixed(2);
       const finalPrice = Math.max(0, parseFloat(unitPrice) - parseFloat(discount)).toFixed(2);
 
-      // Identifier: Uses SKU if available, otherwise Variant ID, otherwise Line Item ID
-      const itemId = line.sku || String(line.variant_id || line.id);
-      const itemName = line.title;
+      // Resolve Petpooja Item ID parallel to Shopify ID
+      const matchedMapping = findCakeMapping(line, mappings as CakeItemMapping[] | undefined);
+
+      const petpoojaItemId = matchedMapping?.petpoojaItemId || line.sku || String(line.variant_id || line.id);
+      const petpoojaVariationId = matchedMapping?.petpoojaVariationId || (line.variant_id ? String(line.variant_id) : "");
+      const itemName = matchedMapping?.petpoojaItemName || line.title;
+
+      // Parallel traceability: Attach the Shopify ID in description so POS screens display both
+      const shopifyIdentifier = `Shopify ID: ${line.variant_id || line.id}${line.sku ? ` | SKU: ${line.sku}` : ""}`;
+      const itemDescription = line.variant_title
+        ? `${line.variant_title} (${shopifyIdentifier})`
+        : shopifyIdentifier;
 
       const itemTax = (line.tax_lines && line.tax_lines.length > 0)
         ? line.tax_lines.map((tl, tIdx) => {
@@ -108,7 +118,7 @@ export class PetpoojaOrderMapper {
         : [];
 
       const item: PetpoojaOrderItem = {
-        id: itemId,
+        id: petpoojaItemId,
         name: itemName,
         tax_inclusive: line.taxable === false || order.taxes_included === true,
         gst_liability: "vendor",
@@ -117,9 +127,9 @@ export class PetpoojaOrderMapper {
         price: unitPrice,
         final_price: finalPrice,
         quantity: String(line.quantity),
-        description: line.variant_title || "",
+        description: itemDescription,
         variation_name: line.variant_title || "",
-        variation_id: line.variant_id ? String(line.variant_id) : "",
+        variation_id: petpoojaVariationId,
         AddonItem: {
           details: [],
         },

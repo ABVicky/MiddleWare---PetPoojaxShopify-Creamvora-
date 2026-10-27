@@ -1,29 +1,62 @@
-# Product & Menu Mapping Guide
+# Cake & Product Mapping Guide
 
 ## 1. Why Mapping is Required
 
-Shopify products use numeric Variant IDs (e.g. `456789123`) and merchant-defined SKUs (e.g. `PIZZA-MARG-REG`), whereas Petpooja POS identifies items using alphanumeric Item IDs (e.g. `ITEM_PIZZA_MARGHERITA`) and optional Variation IDs (e.g. `VAR_10_INCH`).
+Shopify products use numeric Variant IDs (e.g. `45123456789012`), Product IDs (e.g. `8209829119461`), and merchant-defined SKUs (e.g. `CAKE-CHOC-500`), whereas Petpooja POS identifies items using alphanumeric Item IDs (e.g. `PP_CAKE_CHOC_500`) and optional Variation IDs (e.g. `VAR_500G`).
 
-To prevent kitchen miscommunication and cashier errors, **every Shopify order item must resolve to a valid Petpooja menu item**.
-
----
-
-## 2. Unmapped Item Safety Policy
-
-The middleware enforces a strict zero-silent-substitution policy:
-1. When an order contains an unmapped product, the order is **never partially submitted** or guessed.
-2. The order state transitions to **`NEEDS_MAPPING`**.
-3. An actionable notification is displayed on the dashboard highlighting the exact missing product title, variant ID, and SKU.
-4. Once the operator adds the mapping via `/mapping`, clicking **Retry** on the order pushes it to Petpooja immediately.
+To ensure that each cake ordered on Shopify appears accurately on the physical Petpooja POS terminal and Kitchen Display Ticket (KDT), **each cake is mapped with its Petpooja Item ID parallel to the Shopify ID**.
 
 ---
 
-## 3. CSV Import & Export Format
+## 2. Parallel ID Architecture
 
-You can import product mappings in bulk via CSV. The CSV format is:
+When a Shopify order is ingested, the middleware resolves each cake using [`src/config/cake-mappings.json`](../src/config/cake-mappings.json):
+1. **Petpooja Item ID (`OrderItem.details[].id`)**: Populated with the mapped Petpooja item code (e.g. `PP_CAKE_CHOC_500`).
+2. **Petpooja Variation ID (`OrderItem.details[].variation_id`)**: Populated with the weight/variant code (e.g. `VAR_500G`).
+3. **Item Name (`OrderItem.details[].name`)**: Populated with the official cake name.
+4. **Item Description (`OrderItem.details[].description`)**: Automatically attaches the parallel Shopify identifier:
+   ```
+   Shopify ID: 45123456789012 | SKU: CAKE-CHOC-500
+   ```
+   This gives the cashier and kitchen staff complete end-to-end traceability of both the Petpooja Item ID and Shopify ID side by side.
 
-```csv
-shopifyVariantId,shopifySku,shopifyTitle,petpoojaItemId,petpoojaItemName,petpoojaVariationId
-12345678,PIZZA-MARG-REG,Margherita Pizza,ITEM_PIZZA_MARGHERITA,Margherita Pizza,
-12345679,SIDES-GARLIC-BRD,Cheesy Garlic Bread,ITEM_GARLIC_BREAD,Cheesy Garlic Bread,
+---
+
+## 3. Configuration & Customization
+
+You can define and update cake mappings in two ways:
+
+### Option A: Edit `src/config/cake-mappings.json`
+Update the JSON array in [`src/config/cake-mappings.json`](../src/config/cake-mappings.json):
+
+```json
+[
+  {
+    "cakeName": "Belgian Dark Chocolate Truffle Cake (500g)",
+    "shopifyVariantId": "45123456789012",
+    "shopifyProductId": "8209829119461",
+    "shopifySku": "CAKE-CHOC-500",
+    "shopifyTitle": "Belgian Dark Chocolate Truffle Cake (500g)",
+    "petpoojaItemId": "PP_CAKE_CHOC_500",
+    "petpoojaVariationId": "VAR_500G",
+    "petpoojaItemName": "Belgian Dark Chocolate Truffle Cake 500g"
+  }
+]
 ```
+
+### Option B: Set `CAKE_MAPPINGS_JSON` in Vercel
+In your **Vercel Project Dashboard** ➔ **Settings** ➔ **Environment Variables**, you can set `CAKE_MAPPINGS_JSON` to any stringified JSON array matching the structure above. The middleware will automatically use these mappings without needing a code redeploy.
+
+---
+
+## 4. Testing & Verification
+
+You can query the live mappings via the middleware API:
+- **Inspect all mappings**: `GET https://<YOUR-VERCEL-DOMAIN>/api/mappings`
+- **Test a line item lookup**:
+  ```bash
+  curl -X POST https://<YOUR-VERCEL-DOMAIN>/api/mappings \
+    -H "Content-Type: application/json" \
+    -d '{"title": "Belgian Dark Chocolate Truffle Cake (500g)", "sku": "CAKE-CHOC-500"}'
+  ```
+

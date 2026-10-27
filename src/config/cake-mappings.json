@@ -1,0 +1,72 @@
+[
+  {
+    "cakeName": "Belgian Dark Chocolate Truffle Cake (500g)",
+    "shopifyVariantId": "45123456789012",
+    "shopifyProductId": "8209829119461",
+    "shopifySku": "CAKE-CHOC-500",
+    "shopifyTitle": "Belgian Dark Chocolate Truffle Cake (500g)",
+    "petpoojaItemId": "PP_CAKE_CHOC_500",
+    "petpoojaVariationId": "VAR_500G",
+    "petpoojaItemName": "Belgian Dark Chocolate Truffle Cake 500g"
+  },
+  {
+    "cakeName": "Belgian Dark Chocolate Truffle Cake (1kg)",
+    "shopifyVariantId": "45123456789013",
+    "shopifyProductId": "8209829119461",
+    "shopifySku": "CAKE-CHOC-1KG",
+    "shopifyTitle": "Belgian Dark Chocolate Truffle Cake (1kg)",
+    "petpoojaItemId": "PP_CAKE_CHOC_1KG",
+    "petpoojaVariationId": "VAR_1KG",
+    "petpoojaItemName": "Belgian Dark Chocolate Truffle Cake 1kg"
+  },
+  {
+    "cakeName": "Classic Red Velvet Cream Cheese Cake (500g)",
+    "shopifyVariantId": "45123456789014",
+    "shopifyProductId": "8209829119462",
+    "shopifySku": "CAKE-RV-500",
+    "shopifyTitle": "Classic Red Velvet Cream Cheese Cake (500g)",
+    "petpoojaItemId": "PP_CAKE_RV_500",
+    "petpoojaVariationId": "VAR_500G",
+    "petpoojaItemName": "Classic Red Velvet Cake 500g"
+  },
+  {
+    "cakeName": "Classic Red Velvet Cream Cheese Cake (1kg)",
+    "shopifyVariantId": "45123456789015",
+    "shopifyProductId": "8209829119462",
+    "shopifySku": "CAKE-RV-1KG",
+    "shopifyTitle": "Classic Red Velvet Cream Cheese Cake (1kg)",
+    "petpoojaItemId": "PP_CAKE_RV_1KG",
+    "petpoojaVariationId": "VAR_1KG",
+    "petpoojaItemName": "Classic Red Velvet Cake 1kg"
+  },
+  {
+    "cakeName": "New York Baked Blueberry Cheesecake",
+    "shopifyVariantId": "45123456789016",
+    "shopifyProductId": "8209829119463",
+    "shopifySku": "CAKE-NY-BLUE-500",
+    "shopifyTitle": "New York Baked Blueberry Cheesecake",
+    "petpoojaItemId": "PP_CAKE_NY_BLUE",
+    "petpoojaVariationId": "VAR_500G",
+    "petpoojaItemName": "New York Baked Blueberry Cheesecake"
+  },
+  {
+    "cakeName": "Roasted Hazelnut Praline Cake",
+    "shopifyVariantId": "45123456789017",
+    "shopifyProductId": "8209829119464",
+    "shopifySku": "CAKE-HAZEL-500",
+    "shopifyTitle": "Roasted Hazelnut Praline Cake",
+    "petpoojaItemId": "PP_CAKE_HAZEL_500",
+    "petpoojaVariationId": "VAR_500G",
+    "petpoojaItemName": "Roasted Hazelnut Praline Cake"
+  },
+  {
+    "cakeName": "Lotus Biscoff Gourmet Cake",
+    "shopifyVariantId": "45123456789018",
+    "shopifyProductId": "8209829119465",
+    "shopifySku": "CAKE-BISCOFF-500",
+    "shopifyTitle": "Lotus Biscoff Gourmet Cake",
+    "petpoojaItemId": "PP_CAKE_BISCOFF_500",
+    "petpoojaVariationId": "VAR_500G",
+    "petpoojaItemName": "Lotus Biscoff Gourmet Cake"
+  }
+]
