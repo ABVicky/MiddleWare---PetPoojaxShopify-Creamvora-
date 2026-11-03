@@ -20,6 +20,27 @@ When a Shopify order is ingested, the middleware resolves each cake using [`src/
    ```
    This gives the cashier and kitchen staff complete end-to-end traceability of both the Petpooja Item ID and Shopify ID side by side.
 
+### Matching order
+
+Each line item is matched against **all** mappings one tier at a time, most specific first:
+
+1. `shopifyVariantId`: the exact cake and size (recommended for every sellable variant)
+2. `shopifySku`
+3. `shopifyProductId`: used only if every mapping for that product points to the same Petpooja item/variation. A cake sold in several sizes needs variant ID or SKU mappings.
+4. `shopifyTitle` / `cakeName`: compared to the line title, `"Title - Variant"` or `"Title (Variant)"`
+
+The optional `petpoojaVariationName` field sets `variation_name` exactly as it appears in the Petpooja menu.
+
+### Unmapped products
+
+If a line item matches no mapping, the order is **still sent** to Petpooja (with the Shopify SKU/ID as a placeholder item code), and a `WARN` log is written:
+
+```
+UNMAPPED SHOPIFY PRODUCT: no Petpooja item mapping found; line will need manual billing in Petpooja
+```
+
+The log includes the order number and the Shopify product ID, variant ID, SKU and title. Add a mapping for that variant to fix it. An invalid `CAKE_MAPPINGS_JSON` value is logged as an `ERROR`, and the middleware falls back to `cake-mappings.json`.
+
 ---
 
 ## 3. Configuration & Customization

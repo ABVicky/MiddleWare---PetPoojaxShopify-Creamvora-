@@ -1,7 +1,8 @@
 import { ShopifyOrderWebhook } from "@/src/integrations/shopify/shopify.types";
 import { BillingCalculator } from "@/src/services/billing-calculator";
 import { PetpoojaSaveOrderPayload, PetpoojaOrderItem } from "./petpooja.types";
-import { findCakeMapping, CakeItemMapping } from "@/src/config/cake-mappings";
+import { resolveCakeMapping, getCakeMappings, CakeItemMapping } from "@/src/config/cake-mappings";
+import { logger } from "@/src/lib/logger";
 
 export interface PetpoojaMapperOptions {
   appKey: string;
@@ -86,6 +87,10 @@ export class PetpoojaOrderMapper {
       .filter(Boolean)
       .join(", ") || "Store Pickup / Not Provided";
 
+    const orderNumber = String(order.order_number || order.name.replace("#", ""));
+    const cakeMappings = Array.isArray(mappings) && mappings.length > 0 ? (mappings as CakeItemMapping[]) : getCakeMappings();
+    const unmappedLines: Array<Record<string, unknown>> = [];
+
     // Line Items Mapping: Resolve Petpooja item ID parallel to Shopify ID for each cake
     const orderItems: PetpoojaOrderItem[] = order.line_items.map((line, idx) => {
       const unitPrice = parseFloat(line.price || "0").toFixed(2);
@@ -93,10 +98,34 @@ export class PetpoojaOrderMapper {
       const finalPrice = Math.max(0, parseFloat(unitPrice) - parseFloat(discount)).toFixed(2);
 
       // Resolve Petpooja Item ID parallel to Shopify ID
-      const matchedMapping = findCakeMapping(line, mappings as CakeItemMapping[] | undefined);
+      const resolution = resolveCakeMapping(line, cakeMappings);
+      const matchedMapping = resolution.mapping;
 
+      if (!matchedMapping) {
+        const unmapped = {
+          lineIndex: idx,
+          lineItemId: String(line.id),
+          shopifyProductId: line.product_id ? String(line.product_id) : null,
+          shopifyVariantId: line.variant_id ? String(line.variant_id) : null,
+          sku: line.sku || null,
+          title: line.title,
+          variantTitle: line.variant_title || null,
+          reason: resolution.reason,
+        };
+        unmappedLines.push(unmapped);
+        logger.warn("UNMAPPED SHOPIFY PRODUCT: no Petpooja item mapping found; line will need manual billing in Petpooja", {
+          orderId: orderNumber,
+          ...unmapped,
+        });
+      }
+
+      // Unmapped lines still sync (so the order is not lost) using the Shopify SKU/ID as a placeholder item code.
       const petpoojaItemId = matchedMapping?.petpoojaItemId || line.sku || String(line.variant_id || line.id);
-      const petpoojaVariationId = matchedMapping?.petpoojaVariationId || (line.variant_id ? String(line.variant_id) : "");
+      // Shopify variant IDs are never valid Petpooja variation IDs, so only send mapped variations.
+      const petpoojaVariationId = matchedMapping?.petpoojaVariationId || "";
+      const variationName = matchedMapping
+        ? matchedMapping.petpoojaVariationName || (petpoojaVariationId ? line.variant_title || "" : "")
+        : line.variant_title || "";
       const itemName = matchedMapping?.petpoojaItemName || line.title;
 
       // Parallel traceability: Attach the Shopify ID in description so POS screens display both
@@ -128,7 +157,7 @@ export class PetpoojaOrderMapper {
         final_price: finalPrice,
         quantity: String(line.quantity),
         description: itemDescription,
-        variation_name: line.variant_title || "",
+        variation_name: variationName,
         variation_id: petpoojaVariationId,
         AddonItem: {
           details: [],
@@ -137,6 +166,21 @@ export class PetpoojaOrderMapper {
 
       return item;
     });
+
+    if (unmappedLines.length > 0) {
+      logger.warn("Petpooja order contains unmapped Shopify products; update cake mappings to auto-populate them", {
+        orderId: orderNumber,
+        totalLines: order.line_items.length,
+        unmappedCount: unmappedLines.length,
+        unmappedShopifyVariantIds: unmappedLines.map((l) => l.shopifyVariantId),
+        unmappedTitles: unmappedLines.map((l) => l.title),
+      });
+    } else {
+      logger.info("All Shopify line items resolved to Petpooja items", {
+        orderId: orderNumber,
+        totalLines: order.line_items.length,
+      });
+    }
 
     // Tax Lines
     const taxLines = [];
